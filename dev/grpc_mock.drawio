@@ -1,0 +1,52 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.9 Chrome/128.0.6613.186 Electron/32.2.5 Safari/537.36" version="26.0.9">
+  <diagram name="Страница — 1" id="D3WlO3X5a3Ik-URz-e38">
+    <mxGraphModel dx="1816" dy="563" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="gYz2qUCb2Af_SBFDwM8w-1" target="gYz2qUCb2Af_SBFDwM8w-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-1" value="GRPC&lt;div&gt;мок&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="240" width="270" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gYz2qUCb2Af_SBFDwM8w-3" target="gYz2qUCb2Af_SBFDwM8w-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-5" value="конфигурируют&lt;div&gt;в рантайме&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="gYz2qUCb2Af_SBFDwM8w-4">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-3" value="&lt;div&gt;&lt;br&gt;&lt;/div&gt;протофайл" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="-40" y="287.5" width="180" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-7" value="журнал&lt;div&gt;запросов (JSON):&lt;/div&gt;&lt;div&gt;- запрос (с таймстемпом)&lt;/div&gt;&lt;div&gt;- ответ&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="780" y="282.5" width="140" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="gYz2qUCb2Af_SBFDwM8w-10" target="gYz2qUCb2Af_SBFDwM8w-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-10" value="клиенты&lt;div&gt;GRPC&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="357.5" y="585" width="155" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="gYz2qUCb2Af_SBFDwM8w-14" target="gYz2qUCb2Af_SBFDwM8w-1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="517.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-13" value="конфигурируют&lt;div&gt;из файлов на старте&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="gYz2qUCb2Af_SBFDwM8w-12">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-14" value="протофайл" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-40" y="470" width="180" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="gYz2qUCb2Af_SBFDwM8w-15" value="1. Динамический сервер GRPC: [слушать socket, в который будет прилетать GRPC-запрос. Из него надо достать метод и боди распарсить]. Формат уже описан протофайлом. Сервер должен уметь распаршивать любые запросы на основании имеющихся в базе протофайлов.&lt;div&gt;2. Есть HTTP ручка конфигурации, которая принимает сервис, метод, протофайл.&lt;/div&gt;&lt;div&gt;3. Ручка для ответов мока: &quot;сейчас этот сервис с таким методом должен отвечать вот такими ответами&quot;.&lt;/div&gt;&lt;div&gt;4. Ручка для перманентной конфигурации.&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-40" y="730" width="600" height="320" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,30 @@
+// echo.proto
+syntax = "proto3";
+package library;
+
+
+message BookAddRequest {
+  string book_uuid = 1;
+  int64 user_id = 2;
+  string timestamp = 3;
+}
+
+message BookAddReply {
+  string transaction_uuid = 1;
+}
+
+message BookRemoveRequest {
+  string book_uuid = 1;
+  int64 user_id = 2;
+  string timestamp = 3;
+}
+
+message BookRemoveReply {
+  string transaction_uuid = 1;
+}
+
+// The library service definition.
+service Books {
+  rpc BookAddEndpoint (BookAddRequest) returns (BookAddReply) {}
+  rpc BookRemoveEndpoint (BookRemoveRequest) returns (BookRemoveReply) {}
+}
