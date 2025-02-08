@@ -71,6 +71,10 @@ wheels = [
 name = "grpc-mock"
 version = "0.1.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "h2" },
+    { name = "hyperframe" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -78,6 +82,10 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [
+    { name = "h2", specifier = ">=4.2.0" },
+    { name = "hyperframe", specifier = ">=6.1.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [{ name = "betterproto", extras = ["compiler"], specifier = "==2.0.0b7" }]
