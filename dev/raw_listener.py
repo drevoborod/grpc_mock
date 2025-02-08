@@ -1,5 +1,6 @@
 import socket
 
+import blackboxprotobuf
 import h2.config
 import h2.connection
 import h2.events
@@ -44,13 +45,28 @@ def http2_handle(sock):
             if isinstance(event, h2.events.RequestReceived):
                 http2_send_response(conn, event)
             if isinstance(event, h2.events.DataReceived):
-                parse_grpc_data(event.data)
+                parse_grpc_data(event)
         if data_to_send := conn.data_to_send():
             sock.sendall(data_to_send)
 
 
-def parse_grpc_data(raw_data: bytes):
-    pass
+def parse_grpc_data(event: h2.events.DataReceived):
+    default_type_def = {
+        "1": {
+            "name": "book_uuid",
+            "type": "string"
+        },
+        "2": {
+            "name": "user_id",
+            "type": "int"
+        },
+        "3": {
+            "name": "timestamp",
+            "type": "string"
+        }
+    }
+    message, _ = blackboxprotobuf.protobuf_to_json(event.data[5:], default_type_def)
+    print(message)
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

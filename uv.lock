@@ -2,6 +2,18 @@ version = 1
 requires-python = ">=3.12"
 
 [[package]]
+name = "bbpb"
+version = "1.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3e/01/808d7e5c19b9437244ff58370517cc8e2f0b4a345b4aa9c51b416f8d0da5/bbpb-1.4.1.tar.gz", hash = "sha256:049eeb1f15dc09ebb13b0d7316a9fd9d03435b6b0d7141ce1556445376d33eb2", size = 37072 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a4/44/16129dccf5d9f2262baa93fcf3e65a8a39661dbf2de2da00fd94e72391f8/bbpb-1.4.1-py3-none-any.whl", hash = "sha256:035bd1ba9f212b539244187261f9b6864f5a60cd4d0937fbf3bb6fa591fe07b4", size = 50030 },
+]
+
+[[package]]
 name = "betterproto"
 version = "2.0.0b7"
 source = { registry = "https://pypi.org/simple" }
@@ -72,6 +84,7 @@ name = "grpc-mock"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "bbpb" },
     { name = "h2" },
     { name = "hyperframe" },
 ]
@@ -83,6 +96,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bbpb", specifier = ">=1.4.1" },
     { name = "h2", specifier = ">=4.2.0" },
     { name = "hyperframe", specifier = ">=6.1.0" },
 ]
