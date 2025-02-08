@@ -15,6 +15,9 @@ def http2_send_response(conn: h2.connection.H2Connection, event):
         headers=[
             (":status", "200"),
             ('server', 'basic-h2-server/1.0'),
+            ("grpc-status", "0"),
+            ('content-type', 'application/grpc'),
+            # ("grpc-encoding", "gzip"),
         ]
     )
     conn.send_data(stream_id=stream_id, data=b'it works!', end_stream=True)
@@ -40,8 +43,14 @@ def http2_handle(sock):
         for event in events:
             if isinstance(event, h2.events.RequestReceived):
                 http2_send_response(conn, event)
+            if isinstance(event, h2.events.DataReceived):
+                parse_grpc_data(event.data)
         if data_to_send := conn.data_to_send():
             sock.sendall(data_to_send)
+
+
+def parse_grpc_data(raw_data: bytes):
+    pass
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
