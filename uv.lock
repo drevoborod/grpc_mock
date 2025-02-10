@@ -2,6 +2,15 @@ version = 1
 requires-python = ">=3.12"
 
 [[package]]
+name = "antlr4-python3-runtime"
+version = "4.13.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/5f/2cdf6f7aca3b20d3f316e9f505292e1f256a32089bd702034c29ebde6242/antlr4_python3_runtime-4.13.2.tar.gz", hash = "sha256:909b647e1d2fc2b70180ac586df3933e38919c85f98ccc656a96cd3f25ef3916", size = 117467 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/03/a851e84fcbb85214dc637b6378121ef9a0dd61b4c65264675d8a5c9b1ae7/antlr4_python3_runtime-4.13.2-py3-none-any.whl", hash = "sha256:fe3835eb8d33daece0e799090eda89719dbccee7aa39ef94eed3818cafa5a7e8", size = 144462 },
+]
+
+[[package]]
 name = "bbpb"
 version = "1.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -87,6 +96,7 @@ dependencies = [
     { name = "bbpb" },
     { name = "h2" },
     { name = "hyperframe" },
+    { name = "proto-schema-parser" },
 ]
 
 [package.dev-dependencies]
@@ -99,6 +109,7 @@ requires-dist = [
     { name = "bbpb", specifier = ">=1.4.1" },
     { name = "h2", specifier = ">=4.2.0" },
     { name = "hyperframe", specifier = ">=6.1.0" },
+    { name = "proto-schema-parser", specifier = ">=1.4.5" },
 ]
 
 [package.metadata.requires-dev]
@@ -277,6 +288,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/13/fc/128cc9cb8f03208bdbf93d3aa862e16d376844a14f9a0ce5cf4507372de4/platformdirs-4.3.6.tar.gz", hash = "sha256:357fb2acbc885b0419afd3ce3ed34564c13c9b95c89360cd9563f73aa5e2b907", size = 21302 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3c/a6/bc1012356d8ece4d66dd75c4b9fc6c1f6650ddd5991e421177d9f8f671be/platformdirs-4.3.6-py3-none-any.whl", hash = "sha256:73e575e1408ab8103900836b97580d5307456908a03e92031bab39e4554cc3fb", size = 18439 },
+]
+
+[[package]]
+name = "proto-schema-parser"
+version = "1.4.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "antlr4-python3-runtime" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/09/8c/28e2c4baee87cd7cba6b5f3e69479a8d5993602194d690ec71a957cfd82e/proto_schema_parser-1.4.5.tar.gz", hash = "sha256:be5931d016a250e76bdfe953b190d2b8a817d8b7dcbd861d7226670bbd7a011a", size = 68977 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/aa/90/f5f583843ef6c3305d569f2e4f235de45f04ce62b620d743f089aac8c50d/proto_schema_parser-1.4.5-py3-none-any.whl", hash = "sha256:8d9cc90972a6154d50e304c52115aafbfe2cc1427dbd9308756c4608940ea135", size = 63577 },
 ]
 
 [[package]]

@@ -1,4 +1,5 @@
 import json
+import re
 import socket
 
 import blackboxprotobuf
@@ -23,7 +24,7 @@ message BookMetadata {
   message Publisher {
     string name = 1;
   }
-  
+
   string name = 1;
   int32 year = 2;
   repeated Author authors = 3;
@@ -31,11 +32,22 @@ message BookMetadata {
 }
 
 message BookAddRequest {
+  message User {
+    enum Sex {
+      MALE = 0;
+      FEMALE = 1;
+    }
+    string last_name = 1;
+    string first_name = 2;
+    optional string second_name = 3;
+    optional Sex sex = 4;
+  }
+
   string book_uuid = 1;
   int64 user_id = 2;
   string timestamp = 3;
   optional BookMetadata metadata = 4;
-  
+  optional User user = 5;
 }
 
 message BookAddReply {
@@ -85,30 +97,41 @@ def http2_handle(sock):
     conn.initiate_connection()
     sock.sendall(conn.data_to_send())
     data_counter = 0
+    prepared_events = {}
     while True:
         data = sock.recv(4096)
         if not data:
             break
         events = conn.receive_data(data)
         data_counter += 1
-        print("Data chunks received:", data_counter)
+        # print("Data chunks received:", data_counter)
         print(events)
         # for event in events:
         #     if isinstance(event, h2.events.DataReceived):
         #         http2_send_response(conn, event)
         for event in events:
             if isinstance(event, h2.events.RequestReceived):
+                prepared_events["request"] = event
                 http2_send_response(conn, event)
             if isinstance(event, h2.events.DataReceived):
-                parse_grpc_data(event, prepare_typedef(PROTO, "library.BookAddRequest"))
+                prepared_events["data"] = event
+
+        if len(prepared_events) == 2:
+            parse_grpc_data(prepared_events["data"], prepare_typedef(PROTO, prepared_events["request"]))
         if data_to_send := conn.data_to_send():
             sock.sendall(data_to_send)
 
 
-def prepare_typedef(proto: str, message_name: str):
+def prepare_typedef(proto: str, event: h2.events.RequestReceived):
     parser = ProtoParser(proto)
     typedef = parser.to_typedef()
-    return typedef[message_name]
+    path: str = ""
+    for header in event.headers:
+        if header[0] == b":path":
+            path = header[1].decode()
+            break
+    package, service, method = re.match(r"^/(.+)\.(.+)/(.+)$", path).groups()
+    return typedef[package]["services"][service]["methods"][method]["request"]
 
 
 def parse_grpc_data(event: h2.events.DataReceived, typedef: dict):

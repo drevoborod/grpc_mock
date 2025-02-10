@@ -22,6 +22,11 @@ if TYPE_CHECKING:
     from grpclib.metadata import Deadline
 
 
+class BookAddRequestUserSex(betterproto.Enum):
+    MALE = 0
+    FEMALE = 1
+
+
 @dataclass(eq=False, repr=False)
 class Author(betterproto.Message):
     last_name: str = betterproto.string_field(1)
@@ -50,6 +55,15 @@ class BookAddRequest(betterproto.Message):
     user_id: int = betterproto.int64_field(2)
     timestamp: str = betterproto.string_field(3)
     metadata: Optional["BookMetadata"] = betterproto.message_field(4, optional=True)
+    user: Optional["BookAddRequestUser"] = betterproto.message_field(5, optional=True)
+
+
+@dataclass(eq=False, repr=False)
+class BookAddRequestUser(betterproto.Message):
+    last_name: str = betterproto.string_field(1)
+    first_name: str = betterproto.string_field(2)
+    second_name: Optional[str] = betterproto.string_field(3, optional=True)
+    sex: Optional["BookAddRequestUserSex"] = betterproto.enum_field(4, optional=True)
 
 
 @dataclass(eq=False, repr=False)

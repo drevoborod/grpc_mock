@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from grpclib.client import Channel
 
-from dev.generated.library import BookAddRequest, BooksStub, BookMetadata, Author, BookMetadataPublisher
+from dev.generated.library import BookAddRequest, BooksStub, BookMetadata, Author, BookMetadataPublisher, BookAddRequestUser, BookAddRequestUserSex
 
 
 async def main():
@@ -23,6 +23,11 @@ async def main():
                     Author(last_name="Работник", first_name="Литературный", second_name="1"),
                 ],
                 publisher=BookMetadataPublisher(name="Рога и копыта")
+            ),
+            user=BookAddRequestUser(
+                last_name="Васечкин",
+                first_name="Петя",
+                sex=BookAddRequestUserSex.FEMALE,
             )
         )
     )
