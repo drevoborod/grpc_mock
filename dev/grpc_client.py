@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from grpclib.client import Channel
 
-from dev.generated.library import BookAddRequest, BooksStub
+from dev.generated.library import BookAddRequest, BooksStub, BookMetadata, Author, BookMetadataPublisher
 
 
 async def main():
@@ -14,7 +14,16 @@ async def main():
         book_add_request=BookAddRequest(
             book_uuid=str(uuid4()),
             user_id=123,
-            timestamp=datetime.now(UTC).isoformat()
+            timestamp=datetime.now(UTC).isoformat(),
+            metadata=BookMetadata(
+                name="Война и мир",
+                year=1884,
+                authors=[
+                    Author(last_name="Толстой", first_name="Лео"),
+                    Author(last_name="Работник", first_name="Литературный", second_name="1"),
+                ],
+                publisher=BookMetadataPublisher(name="Рога и копыта")
+            )
         )
     )
     print(response)

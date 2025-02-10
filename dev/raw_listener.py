@@ -1,9 +1,64 @@
+import json
 import socket
 
 import blackboxprotobuf
 import h2.config
 import h2.connection
 import h2.events
+
+from dev.proto_file_parser import ProtoParser
+
+PROTO = """
+syntax = "proto3";
+package library;
+
+
+message Author {
+  string last_name = 1;
+  string first_name = 2;
+  optional string second_name = 3;
+}
+
+message BookMetadata {
+  message Publisher {
+    string name = 1;
+  }
+  
+  string name = 1;
+  int32 year = 2;
+  repeated Author authors = 3;
+  optional Publisher publisher = 4;
+}
+
+message BookAddRequest {
+  string book_uuid = 1;
+  int64 user_id = 2;
+  string timestamp = 3;
+  optional BookMetadata metadata = 4;
+  
+}
+
+message BookAddReply {
+  string transaction_uuid = 1;
+}
+
+message BookRemoveRequest {
+  string book_uuid = 1;
+  int64 user_id = 2;
+  string timestamp = 3;
+}
+
+message BookRemoveReply {
+  string transaction_uuid = 1;
+}
+
+// The library service definition.
+service Books {
+  rpc BookAddEndpoint (BookAddRequest) returns (BookAddReply) {}
+  rpc BookRemoveEndpoint (BookRemoveRequest) returns (BookRemoveReply) {}
+}
+
+"""
 
 
 HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
@@ -45,28 +100,21 @@ def http2_handle(sock):
             if isinstance(event, h2.events.RequestReceived):
                 http2_send_response(conn, event)
             if isinstance(event, h2.events.DataReceived):
-                parse_grpc_data(event)
+                parse_grpc_data(event, prepare_typedef(PROTO, "library.BookAddRequest"))
         if data_to_send := conn.data_to_send():
             sock.sendall(data_to_send)
 
 
-def parse_grpc_data(event: h2.events.DataReceived):
-    default_type_def = {
-        "1": {
-            "name": "book_uuid",
-            "type": "string"
-        },
-        "2": {
-            "name": "user_id",
-            "type": "int"
-        },
-        "3": {
-            "name": "timestamp",
-            "type": "string"
-        }
-    }
-    message, _ = blackboxprotobuf.protobuf_to_json(event.data[5:], default_type_def)
+def prepare_typedef(proto: str, message_name: str):
+    parser = ProtoParser(proto)
+    typedef = parser.to_typedef()
+    return typedef[message_name]
+
+
+def parse_grpc_data(event: h2.events.DataReceived, typedef: dict):
+    message, _ = blackboxprotobuf.decode_message(event.data[5:], typedef)
     print(message)
+    print(json.dumps(message, ensure_ascii=False, indent=4))
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

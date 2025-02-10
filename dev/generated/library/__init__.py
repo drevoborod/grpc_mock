@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Dict,
+    List,
     Optional,
 )
 
@@ -22,10 +23,33 @@ if TYPE_CHECKING:
 
 
 @dataclass(eq=False, repr=False)
+class Author(betterproto.Message):
+    last_name: str = betterproto.string_field(1)
+    first_name: str = betterproto.string_field(2)
+    second_name: Optional[str] = betterproto.string_field(3, optional=True)
+
+
+@dataclass(eq=False, repr=False)
+class BookMetadata(betterproto.Message):
+    name: str = betterproto.string_field(1)
+    year: int = betterproto.int32_field(2)
+    authors: List["Author"] = betterproto.message_field(3)
+    publisher: Optional["BookMetadataPublisher"] = betterproto.message_field(
+        4, optional=True
+    )
+
+
+@dataclass(eq=False, repr=False)
+class BookMetadataPublisher(betterproto.Message):
+    name: str = betterproto.string_field(1)
+
+
+@dataclass(eq=False, repr=False)
 class BookAddRequest(betterproto.Message):
     book_uuid: str = betterproto.string_field(1)
     user_id: int = betterproto.int64_field(2)
     timestamp: str = betterproto.string_field(3)
+    metadata: Optional["BookMetadata"] = betterproto.message_field(4, optional=True)
 
 
 @dataclass(eq=False, repr=False)
