@@ -6,7 +6,11 @@ import h2.config
 import h2.connection
 import h2.events
 
-from grpc_mock.proto_utils import get_proto_path_from_request, get_request_typedef_from_proto_package, parse_proto_file
+from grpc_mock.proto_utils import (
+    get_proto_metadata_from_request,
+    get_request_typedef_from_proto_package,
+    parse_proto_file,
+)
 from grpc_mock.repository import get_proto
 
 
@@ -20,13 +24,13 @@ def http2_send_response(conn: h2.connection.H2Connection, event):
         stream_id=stream_id,
         headers=[
             (":status", "200"),
-            ('server', 'basic-h2-server/1.0'),
+            ("server", "basic-h2-server/1.0"),
             ("grpc-status", "0"),
-            ('content-type', 'application/grpc'),
+            ("content-type", "application/grpc"),
             # ("grpc-encoding", "gzip"),
-        ]
+        ],
     )
-    conn.send_data(stream_id=stream_id, data=b'it works!', end_stream=True)
+    conn.send_data(stream_id=stream_id, data=b"it works!", end_stream=True)
 
 
 def http2_handle(sock):
@@ -58,7 +62,7 @@ def http2_handle(sock):
             sock.sendall(data_to_send)
 
     if len(prepared_events) == 2:
-        proto_path = get_proto_path_from_request(prepared_events["request"])
+        proto_path = get_proto_metadata_from_request(prepared_events["request"])
         proto_package = parse_proto_file(get_proto(proto_path))
         parse_grpc_data(
             prepared_events["data"],

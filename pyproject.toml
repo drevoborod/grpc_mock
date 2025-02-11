@@ -14,4 +14,35 @@ dependencies = [
 [dependency-groups]
 dev = [
     "betterproto[compiler]==2.0.0b7",
+    "deepdiff>=8.2.0",
+    "pytest>=8.3.4",
+    "ruff>=0.9.6",
 ]
+
+[tool.ruff]
+line-length = 80
+target-version = "py312"
+exclude = [
+    "dev",
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    ".env",
+    ".idea",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "ASYNC", "TD", "FIX001"]
+ignore = ["E501"]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+lines-between-types = 1
+
+[tool.black]
+line-length = 80
+skip-string-normalization = true
+target-version = ["py312"]
