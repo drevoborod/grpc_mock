@@ -1,9 +1,7 @@
-import re
 from dataclasses import dataclass
 
 from blackboxprotobuf.lib.protofile import import_proto
 from blackboxprotobuf.lib.config import default as default_config
-import h2.events
 from proto_schema_parser import Parser
 from proto_schema_parser.ast import (
     Package,
@@ -21,6 +19,10 @@ class ProtoParserError(Exception):
 
 @dataclass
 class ProtoMethodStructure:
+    """
+    Represents GRPC method parts which allow to identify the method inside a protobuf definition file.
+
+    """
     host: str
     package: str
     service: str
@@ -133,27 +135,4 @@ def get_request_typedef_from_proto_package(
 ) -> dict:
     return (
         package.services[proto_path.service].methods[proto_path.method].request
-    )
-
-
-def get_proto_metadata_from_request(
-    event: h2.events.RequestReceived,
-) -> ProtoMethodStructure:
-    """
-    Parses GRPC request object and returns a model representing protobuf metadata:
-    package, service and method names.
-
-    """
-    host = ""
-    path = ""
-    for header in event.headers:
-        if header[0] == b":path":
-            path = header[1].decode()
-        if header[0] == b":authority":
-            host = header[1].decode().split(":")[0]
-        if host and path:
-            break
-    package, service, method = re.match(r"^/(.+)\.(.+)/(.+)$", path).groups()
-    return ProtoMethodStructure(
-        host=host, package=package, service=service, method=method
     )

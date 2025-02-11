@@ -1,7 +1,7 @@
 from grpc_mock.proto_utils import ProtoMethodStructure
 
 
-def get_proto(proto_path: ProtoMethodStructure) -> str:
+async def get_proto(proto_path: ProtoMethodStructure) -> str:
     return """
 syntax = "proto3";
 package library;

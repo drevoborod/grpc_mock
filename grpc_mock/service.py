@@ -1,87 +1,63 @@
-import json
-import socket
+
+import logging
+import re
 
 import blackboxprotobuf
-import h2.config
-import h2.connection
-import h2.events
+from starlette.requests import Request
+from starlette.responses import Response
 
-from grpc_mock.proto_utils import (
-    get_proto_metadata_from_request,
-    get_request_typedef_from_proto_package,
-    parse_proto_file,
-)
+from grpc_mock.proto_utils import parse_proto_file, ProtoMethodStructure, get_request_typedef_from_proto_package
 from grpc_mock.repository import get_proto
 
+logger = logging.getLogger(__name__)
 
-HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-PORT = 3333  # Port to listen on (non-privileged ports are > 1023)
+logging.basicConfig(level=logging.INFO)
 
 
-def http2_send_response(conn: h2.connection.H2Connection, event):
-    stream_id = event.stream_id
-    conn.send_headers(
-        stream_id=stream_id,
-        headers=[
-            (":status", "200"),
-            ("server", "basic-h2-server/1.0"),
-            ("grpc-status", "0"),
-            ("content-type", "application/grpc"),
-            # ("grpc-encoding", "gzip"),
-        ],
+def get_proto_method_info_from_request(request: Request) -> ProtoMethodStructure:
+    """
+    Parses GRPC request object and returns a model representing protobuf method structure:
+    host, package, service and method names.
+
+    """
+    package, service, method = re.match(r"^/(.+)\.(.+)/(.+)$", request.url.path).groups()
+    return ProtoMethodStructure(
+        host=request.headers["host"].split(":")[0], package=package, service=service, method=method
     )
-    conn.send_data(stream_id=stream_id, data=b"it works!", end_stream=True)
 
 
-def http2_handle(sock):
-    config = h2.config.H2Configuration(client_side=False)
-    conn = h2.connection.H2Connection(config=config)
-    conn.initiate_connection()
-    sock.sendall(conn.data_to_send())
-    data_counter = 0
-    prepared_events = {}
-    while True:
-        data = sock.recv(4096)
-        if not data:
-            break
-        events = conn.receive_data(data)
-        data_counter += 1
-        # print("Data chunks received:", data_counter)
-        print(events)
-        # for event in events:
-        #     if isinstance(event, h2.events.DataReceived):
-        #         http2_send_response(conn, event)
-        for event in events:
-            if isinstance(event, h2.events.RequestReceived):
-                prepared_events["request"] = event
-                http2_send_response(conn, event)
-            if isinstance(event, h2.events.DataReceived):
-                prepared_events["data"] = event
-
-        if data_to_send := conn.data_to_send():
-            sock.sendall(data_to_send)
-
-    if len(prepared_events) == 2:
-        proto_path = get_proto_metadata_from_request(prepared_events["request"])
-        proto_package = parse_proto_file(get_proto(proto_path))
-        parse_grpc_data(
-            prepared_events["data"],
-            get_request_typedef_from_proto_package(proto_package, proto_path),
-        )
+async def prepare_typedef(request: Request) -> dict:
+    proto_metadata = get_proto_method_info_from_request(request)
+    proto_file = await get_proto(proto_metadata)
+    proto_package = parse_proto_file(proto_file)
+    return get_request_typedef_from_proto_package(proto_package, proto_metadata)
 
 
-def parse_grpc_data(event: h2.events.DataReceived, typedef: dict):
-    message, _ = blackboxprotobuf.decode_message(event.data[5:], typedef)
-    print(message)
-    # print(json.dumps(message, ensure_ascii=False, indent=4))
+async def parse_grpc_data(data: bytes, typedef: dict) -> dict:
+    message, _ = blackboxprotobuf.decode_message(data[5:], typedef)
+    logger.info(message)
+    return message
 
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind((HOST, PORT))
-    s.listen()
-    while True:
-        tcp_conn, addr = s.accept()
-        with tcp_conn:
-            print(f"Connected by {addr}")
-            http2_handle(tcp_conn)
+async def app(scope, receive, send):
+    assert scope['type'] == 'http'
+    request = Request(scope, receive)
+    content = '%s %s' % (request.method, request.url.path)
+    payload = await request.body()
+
+    typedef = await prepare_typedef(request)
+    request_message = await parse_grpc_data(payload, typedef)
+
+    # grpc response
+    response = Response(content, media_type='application/grpc')
+    await response(scope, receive, send)
+
+
+if __name__ == "__main__":
+    import asyncio
+    from hypercorn.config import Config
+    from hypercorn.asyncio import serve
+
+    config = Config()
+    config.bind = "0.0.0.0:3333"
+    asyncio.run(serve(app, config))
