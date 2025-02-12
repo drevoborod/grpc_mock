@@ -23,10 +23,10 @@ class ProtoMethodStructure:
     Represents GRPC method parts which allow to identify the method inside a protobuf definition file.
     """
 
-    host: str
     package: str
     service: str
     method: str
+    host: str | None = None
 
 
 @dataclass

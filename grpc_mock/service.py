@@ -50,7 +50,7 @@ async def prepare_typedef(method_structure: ProtoMethodStructure) -> dict:
     )
 
 
-async def parse_grpc_data(data: bytes, typedef: dict) -> dict:
+def parse_grpc_data(data: bytes, typedef: dict) -> dict:
     message, _ = blackboxprotobuf.decode_message(data[5:], typedef)
     logger.info(message)
     return message
@@ -66,7 +66,7 @@ async def process_grpc_request(request: Request) -> Response:
     method_structure = get_proto_method_structure_from_request(request)
     typedef = await prepare_typedef(method_structure)
     payload = await request.body()
-    request_data = await parse_grpc_data(payload, typedef)
+    request_data = parse_grpc_data(payload, typedef)
     await store_request_to_log(request_data, method_structure)
     content = "%s %s" % (request.method, request.url.path)
     return Response(content, media_type="application/grpc")

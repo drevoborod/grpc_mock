@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${GRPC_MOCK_DATABASE_USER}
+      POSTGRES_PASSWORD: ${GRPC_MOCK_DATABASE_PASSWORD}
+      POSTGRES_DB: ${GRPC_MOCK_DATABASE_NAME}
+    ports:
+      - "14432:5432"
