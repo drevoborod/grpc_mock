@@ -17,6 +17,7 @@ dependencies = [
 dev = [
     "betterproto[compiler]==2.0.0b7",
     "deepdiff>=8.2.0",
+    "httpx>=0.28.1",
     "pytest>=8.3.4",
     "ruff>=0.9.6",
 ]

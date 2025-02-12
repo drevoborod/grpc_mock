@@ -59,3 +59,41 @@ service Books {
   rpc BookRemoveEndpoint (BookRemoveRequest) returns (BookRemoveReply) {}
 }
 """
+
+MOCK_SERVICE_PROTO = """
+syntax = "proto3";
+package grpc_mock;
+
+
+service Configurator {
+  rpc SetConfig (ConfigRequest) returns (ConfigResponse) {}
+}
+
+service Logger {
+  rpc GetLog (LogRequest) returns (LogResponse) {}
+}
+
+
+message ProtoStructure {
+  string package = 1;
+  string service = 2;
+  string method = 3;
+  optional string host = 4;
+}
+
+message ConfigRequest {
+  ProtoStructure proto_structure = 1;
+  string proto = 2;
+  string response_json = 3;
+}
+
+message ConfigResponse {}
+
+message LogRequest {
+  ProtoStructure proto_structure = 1;
+}
+
+message LogResponse {
+  string request_json = 1;
+}
+"""

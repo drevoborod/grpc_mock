@@ -63,3 +63,17 @@ service Books {
   rpc BookRemoveEndpoint (BookRemoveRequest) returns (BookRemoveReply) {}
 }
 """
+
+
+async def set_route_config(data: dict):
+    pass
+
+
+async def get_route_log(method_structure: ProtoMethodStructure) -> dict:
+    return {"data": 1234}
+
+
+async def store_request_to_log(
+    data: dict, method_structure: ProtoMethodStructure
+):
+    pass
