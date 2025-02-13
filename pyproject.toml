@@ -1,0 +1,54 @@
+[project]
+name = "grpc-mock"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "bbpb>=1.4.1",
+    "databases[asyncpg]>=0.9.0",
+    "h2>=4.2.0",
+    "hypercorn>=0.17.3",
+    "hyperframe>=6.1.0",
+    "proto-schema-parser>=1.4.5",
+    "psycopg2-binary>=2.9.10",
+    "starlette>=0.45.3",
+    "yoyo-migrations>=9.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "betterproto[compiler]==2.0.0b7",
+    "deepdiff>=8.2.0",
+    "httpx>=0.28.1",
+    "pytest>=8.3.4",
+    "ruff>=0.9.6",
+]
+
+[tool.ruff]
+line-length = 80
+target-version = "py312"
+exclude = [
+    "dev",
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    ".env",
+    ".idea",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "ASYNC", "TD", "FIX001"]
+ignore = ["E501"]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+lines-between-types = 1
+
+[tool.black]
+line-length = 80
+skip-string-normalization = true
+target-version = ["py312"]
