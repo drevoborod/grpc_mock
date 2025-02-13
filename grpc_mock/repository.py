@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, UTC
 import json
+from collections.abc import Mapping
 
 from grpc_mock.db import DbConnection
 from grpc_mock.proto_utils import ProtoMethodStructure, parse_proto_file, ProtoMethod
@@ -48,7 +49,7 @@ async def store_config(config_request_body: dict):
         for service_name, service in package_structure.services.items():
             for method_name, method in service.methods.items():
                 await _add_config_to_db(
-                    db, config_uuid=config_request_body["config_id"],
+                    db, config_uuid=config_request_body["config_uuid"],
                     package_name=package_structure.name, service_name=service_name,
                     method_name=method_name, method=method,
                     response_mock=mock_mapping[service_name][method_name],
@@ -86,8 +87,27 @@ async def _add_config_to_db(
     )
 
 
-async def get_route_log(query_params: dict) -> dict:
-    return {"data": 1234}
+async def get_route_log(query_params: Mapping) -> dict[str, list]:
+    query_params = {
+        "package_name": query_params.get("package"),
+        "service_name": query_params.get("service"),
+        "method_name": query_params.get("method"),
+        "config_uuid": query_params.get("config_uuid"),
+    }
+    keys_to_remove = [key for key, value in query_params.items() if not value]
+    for key in keys_to_remove:
+        query_params.pop(key)
+    clause = " and ".join([f"mocks.{key}=:{key}" for key in query_params])
+    if clause:
+        clause = f" where {clause}"
+    async with DbConnection() as db:
+        result = await db.select_all(
+            f"select mocks.config_uuid, logs.request, logs.response, logs.created_at from mocks "
+            f"join logs on mocks.id=logs.mock_id "
+            f"{clause}",
+            values=query_params,
+        )
+    return {"logs": [json.dumps(dict(x), ensure_ascii=False, default=str) for x in result]}
 
 
 async def store_to_log(

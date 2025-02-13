@@ -127,11 +127,3 @@ class ProtoFileParser:
 def parse_proto_file(proto: str) -> ProtoPackage:
     parser = ProtoFileParser(proto)
     return parser.parse_proto()
-
-
-# def get_request_typedef_from_proto_package(
-#     package: ProtoPackage, proto_path: ProtoMethodStructure
-# ) -> dict:
-#     return (
-#         package.services[proto_path.service].methods[proto_path.method].request
-#     )

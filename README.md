@@ -21,7 +21,7 @@ body: {
         }
     ],
     "proto": "<proto file contents>",
-    "config_id": "UUID"
+    "config_uuid": "UUID"
 }
 ```
 
@@ -34,7 +34,7 @@ params:
         "package": "library",
         "service": "Books",
         "method": "BookAddEndpoint",
-        "config_id": "UUID",
+        "config_uuid": "UUID",
         "from": "2025-01-18T12:33:01.432Z",
         "to": "2025-01-18T12:35:01.432Z"
     }

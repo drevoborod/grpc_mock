@@ -53,7 +53,11 @@ async def process_grpc_request(request: Request) -> Response:
     logger.info(request_data)
     response_data = blackboxprotobuf.encode_message(storage_mock.response_mock, storage_mock.response_schema)
     await store_to_log(storage_mock.id, request_data, storage_mock.response_mock)
-    return Response((0).to_bytes() + len(response_data).to_bytes(4, "big", signed=False) + response_data, media_type="application/grpc")
+    return Response(
+        (0).to_bytes() + len(response_data).to_bytes(4, "big", signed=False) + response_data,
+        media_type="application/grpc",
+        headers={"grpc-status": "0"},
+    )
 
 
 async def process_rest_request(request: Request) -> Response:
@@ -69,7 +73,7 @@ async def process_rest_request(request: Request) -> Response:
                     {"status": "ok", "message": "configuration stored"}
                 )
         case {"path": "/runs", "method": "GET"}:
-            response_data = await get_route_log(dict(request.query_params))
+            response_data = await get_route_log(request.query_params)
             response = JSONResponse(response_data)
         case _:
             response = prepare_error_response("unknown endpoint or unsupported method")
