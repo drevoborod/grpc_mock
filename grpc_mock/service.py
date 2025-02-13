@@ -51,10 +51,16 @@ async def process_grpc_request(request: Request) -> Response:
     payload = await request.body()
     request_data = parse_grpc_data(payload, storage_mock.request_schema)
     logger.info(request_data)
-    response_data = blackboxprotobuf.encode_message(storage_mock.response_mock, storage_mock.response_schema)
-    await store_to_log(storage_mock.id, request_data, storage_mock.response_mock)
+    response_data = blackboxprotobuf.encode_message(
+        storage_mock.response_mock, storage_mock.response_schema
+    )
+    await store_to_log(
+        storage_mock.id, request_data, storage_mock.response_mock
+    )
     return Response(
-        (0).to_bytes() + len(response_data).to_bytes(4, "big", signed=False) + response_data,
+        (0).to_bytes()
+        + len(response_data).to_bytes(4, "big", signed=False)
+        + response_data,
         media_type="application/grpc",
         headers={"grpc-status": "0"},
     )
@@ -67,7 +73,9 @@ async def process_rest_request(request: Request) -> Response:
             try:
                 await store_config(body)
             except StorageError as err:
-                response = prepare_error_response(f"unable to store configuration: {err}")
+                response = prepare_error_response(
+                    f"unable to store configuration: {err}"
+                )
             else:
                 response = JSONResponse(
                     {"status": "ok", "message": "configuration stored"}
@@ -76,11 +84,15 @@ async def process_rest_request(request: Request) -> Response:
             response_data = await get_route_log(request.query_params)
             response = JSONResponse(response_data)
         case _:
-            response = prepare_error_response("unknown endpoint or unsupported method")
+            response = prepare_error_response(
+                "unknown endpoint or unsupported method"
+            )
     return response
 
 
-def prepare_error_response(message: str, status_code: status = status.HTTP_400_BAD_REQUEST) -> JSONResponse:
+def prepare_error_response(
+    message: str, status_code: status = status.HTTP_400_BAD_REQUEST
+) -> JSONResponse:
     return JSONResponse(
         {"status": "error", "message": message},
         status_code=status_code,
@@ -95,7 +107,9 @@ async def app(scope, receive, send):
         case {"type": "http", "http_version": "1.1"}:
             response = await process_rest_request(Request(scope, receive))
         case _:
-            response = prepare_error_response("This server supports only HTTP of versions 2 and 1.1")
+            response = prepare_error_response(
+                "This server supports only HTTP of versions 2 and 1.1"
+            )
     await response(scope, receive, send)
 
 
