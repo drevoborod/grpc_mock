@@ -13,9 +13,10 @@ from grpc_mock.proto_utils import (
 )
 from grpc_mock.repository import (
     get_proto,
-    set_route_config,
+    store_config,
     get_route_log,
     store_request_to_log,
+    StorageError,
 )
 
 
@@ -56,12 +57,6 @@ def parse_grpc_data(data: bytes, typedef: dict) -> dict:
     return message
 
 
-def http_params_to_grpc_method_structure(
-    request: Request,
-) -> ProtoMethodStructure:
-    pass
-
-
 async def process_grpc_request(request: Request) -> Response:
     method_structure = get_proto_method_structure_from_request(request)
     typedef = await prepare_typedef(method_structure)
@@ -73,23 +68,30 @@ async def process_grpc_request(request: Request) -> Response:
 
 
 async def process_rest_request(request: Request) -> Response:
-    match request.scope["path"]:
-        case "/config":
+    match request.scope:
+        case {"path": "/runs", "method": "POST"}:
             body = await request.json()
-            await set_route_config(body)
-            response = JSONResponse(
-                {"status": "ok", "message": "configuration stored"}
-            )
-        case "/log":
-            method_structure = http_params_to_grpc_method_structure(request)
-            response_data = await get_route_log(method_structure)
+            try:
+                await store_config(body)
+            except StorageError as err:
+                response = prepare_error_response(f"unable to store configuration: {err}")
+            else:
+                response = JSONResponse(
+                    {"status": "ok", "message": "configuration stored"}
+                )
+        case {"path": "/runs", "method": "GET"}:
+            response_data = await get_route_log(dict(request.query_params))
             response = JSONResponse(response_data)
         case _:
-            response = JSONResponse(
-                {"status": "error", "message": "unknown endpoint"},
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+            response = prepare_error_response("unknown endpoint or unsupported method")
     return response
+
+
+def prepare_error_response(message: str, status_code: status = status.HTTP_400_BAD_REQUEST) -> JSONResponse:
+    return JSONResponse(
+        {"status": "error", "message": message},
+        status_code=status_code,
+    )
 
 
 async def app(scope, receive, send):

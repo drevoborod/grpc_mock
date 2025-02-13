@@ -1,3 +1,0 @@
--- 
--- depends: 
-DROP TABLE services;

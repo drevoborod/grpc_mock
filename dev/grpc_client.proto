@@ -40,6 +40,7 @@ message BookAddRequest {
 
 message BookAddReply {
   string transaction_uuid = 1;
+  int64 user_id = 2;
 }
 
 message BookRemoveRequest {
@@ -50,6 +51,7 @@ message BookRemoveRequest {
 
 message BookRemoveReply {
   string transaction_uuid = 1;
+  int64 user_id = 2;
 }
 
 // The library service definition.
