@@ -11,7 +11,7 @@ from grpc_mock.proto_utils import (
     get_request_typedef_from_proto_package,
     parse_proto_file,
 )
-from grpc_mock.repository import get_proto
+from grpc_mock.repository import get_mock_from_storage
 
 
 HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
@@ -86,7 +86,7 @@ def http2_handle(sock):
 
     if len(prepared_events) == 2:
         proto_path = get_proto_metadata_from_request(prepared_events["request"])
-        proto_package = parse_proto_file(get_proto(proto_path))
+        proto_package = parse_proto_file(get_mock_from_storage(proto_path))
         parse_grpc_data(
             prepared_events["data"],
             get_request_typedef_from_proto_package(proto_package, proto_path),

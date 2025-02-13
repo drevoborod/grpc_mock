@@ -17,7 +17,7 @@ async def main():
         #         "method_name": "AddBook", "is_deleted": True, "updated_at": datetime.now(UTC),
         #     }
         # )
-        result = await db.select(
+        result = await db.select_all(
             "select * from mocks",
             values={}
         )

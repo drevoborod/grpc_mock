@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, UTC
 import json
 
@@ -8,69 +9,29 @@ from grpc_mock.proto_utils import ProtoMethodStructure, parse_proto_file, ProtoM
 class StorageError(Exception): pass
 
 
-async def get_proto(proto_path: ProtoMethodStructure) -> str:
-    return """
-syntax = "proto3";
-package library;
+@dataclass
+class StorageMock:
+    id: int
+    request_schema: dict
+    response_schema: dict
+    response_mock: dict
 
 
-message Author {
-  string last_name = 1;
-  string first_name = 2;
-  optional string second_name = 3;
-}
-
-message BookMetadata {
-  message Publisher {
-    string name = 1;
-  }
-
-  string name = 1;
-  int32 year = 2;
-  repeated Author authors = 3;
-  optional Publisher publisher = 4;
-}
-
-message BookAddRequest {
-  message User {
-    enum Sex {
-      MALE = 0;
-      FEMALE = 1;
-    }
-    string last_name = 1;
-    string first_name = 2;
-    optional string second_name = 3;
-    optional Sex sex = 4;
-  }
-
-  string book_uuid = 1;
-  int64 user_id = 2;
-  string timestamp = 3;
-  optional BookMetadata metadata = 4;
-  optional User user = 5;
-}
-
-message BookAddReply {
-  string transaction_uuid = 1;
-}
-
-message BookRemoveRequest {
-  string book_uuid = 1;
-  int64 user_id = 2;
-  string timestamp = 3;
-}
-
-message BookRemoveReply {
-  string transaction_uuid = 1;
-}
-
-// The library service definition.
-service Books {
-  rpc BookAddEndpoint (BookAddRequest) returns (BookAddReply) {}
-  rpc BookRemoveEndpoint (BookRemoveRequest) returns (BookRemoveReply) {}
-}
-"""
-
+async def get_mock_from_storage(proto_structure: ProtoMethodStructure) -> StorageMock:
+    async with DbConnection() as db:
+        db_data = await db.select_one(
+            "select id, request_schema, response_schema, response_mock "
+            "from mocks where package_name=:package_name and service_name=:service_name "
+            "and method_name=:method_name and is_deleted is false",
+            values=dict(
+                package_name=proto_structure.package, service_name=proto_structure.service,
+                method_name=proto_structure.method
+            )
+        )
+    return StorageMock(
+        id=db_data.id, request_schema=json.loads(db_data.request_schema),
+        response_schema=json.loads(db_data.response_schema), response_mock=json.loads(db_data.response_mock),
+    )
 
 
 async def store_config(config_request_body: dict):
@@ -103,8 +64,8 @@ async def _add_config_to_db(
         method: ProtoMethod,
         response_mock: dict,
 ):
-    previous = await db.select(
-        "select * from mocks where package_name=:package_name "
+    previous = await db.select_all(
+        "select id from mocks where package_name=:package_name "
         "and service_name=:service_name and method_name=:method_name and is_deleted is false",
         values={"package_name": package_name, "service_name": service_name, "method_name": method_name}
     )
@@ -129,7 +90,12 @@ async def get_route_log(query_params: dict) -> dict:
     return {"data": 1234}
 
 
-async def store_request_to_log(
-    data: dict, method_structure: ProtoMethodStructure
+async def store_to_log(
+    mock_id: int, request_data: dict, response_data: dict
 ):
-    pass
+    async with DbConnection() as db:
+        await db.execute(
+            "insert into logs (mock_id, request, response) values (:mock_id, :request, :response)",
+            values={"mock_id": mock_id, "request": json.dumps(request_data, ensure_ascii=False), "response": json.dumps(response_data, ensure_ascii=False)}
+        )
+

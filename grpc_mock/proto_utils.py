@@ -26,7 +26,6 @@ class ProtoMethodStructure:
     package: str
     service: str
     method: str
-    host: str | None = None
 
 
 @dataclass
@@ -130,9 +129,9 @@ def parse_proto_file(proto: str) -> ProtoPackage:
     return parser.parse_proto()
 
 
-def get_request_typedef_from_proto_package(
-    package: ProtoPackage, proto_path: ProtoMethodStructure
-) -> dict:
-    return (
-        package.services[proto_path.service].methods[proto_path.method].request
-    )
+# def get_request_typedef_from_proto_package(
+#     package: ProtoPackage, proto_path: ProtoMethodStructure
+# ) -> dict:
+#     return (
+#         package.services[proto_path.service].methods[proto_path.method].request
+#     )

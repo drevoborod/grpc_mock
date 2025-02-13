@@ -18,6 +18,10 @@ class DbConnection:
         result = await self.db.execute(query=query, values=values)
         return result
 
-    async def select(self, query: str, values: dict = None):
+    async def select_one(self, query: str, values: dict = None):
+        result = await self.db.fetch_one(query=query, values=values)
+        return result
+
+    async def select_all(self, query: str, values: dict = None):
         result = await self.db.fetch_all(query=query, values=values)
         return result

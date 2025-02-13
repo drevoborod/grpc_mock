@@ -7,15 +7,13 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
 from grpc_mock.proto_utils import (
-    parse_proto_file,
     ProtoMethodStructure,
-    get_request_typedef_from_proto_package,
 )
 from grpc_mock.repository import (
-    get_proto,
+    get_mock_from_storage,
     store_config,
     get_route_log,
-    store_request_to_log,
+    store_to_log,
     StorageError,
 )
 
@@ -36,35 +34,26 @@ def get_proto_method_structure_from_request(
         r"^/(.+)\.(.+)/(.+)$", request.url.path
     ).groups()
     return ProtoMethodStructure(
-        host=request.headers["host"].split(":")[0],
         package=package,
         service=service,
         method=method,
     )
 
 
-async def prepare_typedef(method_structure: ProtoMethodStructure) -> dict:
-    proto_file = await get_proto(method_structure)
-    proto_package = parse_proto_file(proto_file)
-    return get_request_typedef_from_proto_package(
-        proto_package, method_structure
-    )
-
-
 def parse_grpc_data(data: bytes, typedef: dict) -> dict:
     message, _ = blackboxprotobuf.decode_message(data[5:], typedef)
-    logger.info(message)
     return message
 
 
 async def process_grpc_request(request: Request) -> Response:
     method_structure = get_proto_method_structure_from_request(request)
-    typedef = await prepare_typedef(method_structure)
+    storage_mock = await get_mock_from_storage(method_structure)
     payload = await request.body()
-    request_data = parse_grpc_data(payload, typedef)
-    await store_request_to_log(request_data, method_structure)
-    content = "%s %s" % (request.method, request.url.path)
-    return Response(content, media_type="application/grpc")
+    request_data = parse_grpc_data(payload, storage_mock.request_schema)
+    logger.info(request_data)
+    response_data = blackboxprotobuf.encode_message(storage_mock.response_mock, storage_mock.response_schema)
+    await store_to_log(storage_mock.id, request_data, storage_mock.response_mock)
+    return Response((0).to_bytes() + len(response_data).to_bytes(4, "big", signed=False) + response_data, media_type="application/grpc")
 
 
 async def process_rest_request(request: Request) -> Response:
@@ -96,24 +85,13 @@ def prepare_error_response(message: str, status_code: status = status.HTTP_400_B
 
 async def app(scope, receive, send):
     logger.info(scope)
-    if scope["type"] != "http":
-        response = JSONResponse(
-            {"status": "error", "message": "this server supports HTTP only"},
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-    else:
-        request = Request(scope, receive)
-        if scope["http_version"] == "2":
-            # log and response to GRPC request
-            response = await process_grpc_request(request)
-        elif scope["http_version"] == "1.1":
-            # log and response to REST request
-            response = await process_rest_request(request)
-        else:
-            response = JSONResponse(
-                {"status": "error", "message": "Unknown HTTP version"},
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+    match scope:
+        case {"type": "http", "http_version": "2"}:
+            response = await process_grpc_request(Request(scope, receive))
+        case {"type": "http", "http_version": "1.1"}:
+            response = await process_rest_request(Request(scope, receive))
+        case _:
+            response = prepare_error_response("This server supports only HTTP of versions 2 and 1.1")
     await response(scope, receive, send)
 
 

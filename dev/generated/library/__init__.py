@@ -69,6 +69,7 @@ class BookAddRequestUser(betterproto.Message):
 @dataclass(eq=False, repr=False)
 class BookAddReply(betterproto.Message):
     transaction_uuid: str = betterproto.string_field(1)
+    user_id: int = betterproto.int64_field(2)
 
 
 @dataclass(eq=False, repr=False)
@@ -81,6 +82,7 @@ class BookRemoveRequest(betterproto.Message):
 @dataclass(eq=False, repr=False)
 class BookRemoveReply(betterproto.Message):
     transaction_uuid: str = betterproto.string_field(1)
+    user_id: int = betterproto.int64_field(2)
 
 
 class BooksStub(betterproto.ServiceStub):
