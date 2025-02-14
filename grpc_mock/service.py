@@ -15,6 +15,7 @@ from grpc_mock.repository import (
     StorageError,
 )
 from grpc_mock.config import create_config, Config
+from grpc_mock.models import UploadRunsRequest, DownloadRunsRequest
 
 
 logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ def parse_grpc_data(data: bytes, typedef: dict) -> dict:
     return message
 
 
-async def process_grpc_request(request: Request, config: Config,) -> Response:
+async def process_grpc_request(request: Request, config: Config) -> Response:
     method_structure = get_proto_method_structure_from_request(request)
     storage_mock = await get_mock_from_storage(method_structure, config)
     payload = await request.body()
@@ -70,7 +71,7 @@ async def process_rest_request(request: Request, config: Config) -> Response:
         case {"path": "/runs", "method": "POST"}:
             body = await request.json()
             try:
-                await store_mock(body, config)
+                await store_mock(UploadRunsRequest(**body), config)
             except StorageError as err:
                 response = prepare_error_response(
                     f"unable to store configuration: {err}"
@@ -80,7 +81,7 @@ async def process_rest_request(request: Request, config: Config) -> Response:
                     {"status": "ok", "message": "configuration stored"}
                 )
         case {"path": "/runs", "method": "GET"}:
-            response_data = await get_route_log(request.query_params)
+            response_data = await get_route_log(DownloadRunsRequest(**request.query_params), config)
             response = JSONResponse(response_data)
         case _:
             response = prepare_error_response(
