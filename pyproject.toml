@@ -12,6 +12,7 @@ dependencies = [
     "hyperframe>=6.1.0",
     "proto-schema-parser>=1.4.5",
     "psycopg2-binary>=2.9.10",
+    "python-dotenv>=1.0.1",
     "starlette>=0.45.3",
     "yoyo-migrations>=9.0.0",
 ]
