@@ -1,11 +1,12 @@
-import os
-
 from databases import Database
+
+from grpc_mock.config import Config
 
 
 class DbConnection:
-    def __init__(self):
-        self.db = Database(os.environ["GRPC_MOCK_DB_URL"])
+    def __init__(self, config: Config):
+        pass
+        self.db = Database(config.db_url)
 
     async def __aenter__(self):
         await self.db.connect()
