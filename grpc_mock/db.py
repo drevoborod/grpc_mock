@@ -5,7 +5,6 @@ from grpc_mock.config import Config
 
 class DbConnection:
     def __init__(self, config: Config):
-        pass
         self.db = Database(config.db_url)
 
     async def __aenter__(self):

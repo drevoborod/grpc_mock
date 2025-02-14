@@ -11,5 +11,4 @@ if __name__ == "__main__":
     config = create_config()
     hyper_config = HypercornConfig()
     hyper_config.bind = f"{config.api_host}:{config.api_port}"
-    hyper_config.bind = "0.0.0.0:3333"
     asyncio.run(serve(app, hyper_config))

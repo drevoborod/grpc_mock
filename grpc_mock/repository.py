@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, UTC
 import json
-from collections.abc import Mapping
 
 from grpc_mock.db import DbConnection
 from grpc_mock.proto_utils import (
@@ -10,6 +9,7 @@ from grpc_mock.proto_utils import (
     ProtoMethod,
 )
 from grpc_mock.config import Config
+from grpc_mock.models import UploadRunsRequest, DownloadRunsRequest, Mock
 
 
 class StorageError(Exception):
@@ -46,22 +46,22 @@ async def get_mock_from_storage(
     )
 
 
-async def store_mock(mock_request_body: dict, config: Config):
+async def store_mock(mock_request_body: UploadRunsRequest, config: Config):
     """
     Parse mocks from a configuration request and save them to the storage.
     """
-    package_structure = parse_proto_file(mock_request_body["proto"])
+    package_structure = parse_proto_file(mock_request_body.proto)
     mock_mapping = {}
-    for mock in mock_request_body["mocks"]:
-        method_mock_mapping = mock_mapping.get(mock["service"], {})
-        method_mock_mapping.update({mock["method"]: mock["response"]})
-        mock_mapping[mock["service"]] = method_mock_mapping
+    for mock in mock_request_body.mocks:
+        method_mock_mapping = mock_mapping.get(mock.service, {})
+        method_mock_mapping.update({mock.method: mock.response})
+        mock_mapping[mock.service] = method_mock_mapping
     async with DbConnection(config) as db:
         for service_name, service in package_structure.services.items():
             for method_name, method in service.methods.items():
                 await _add_mock_to_db(
                     db,
-                    config_uuid=mock_request_body["config_uuid"],
+                    config_uuid=mock_request_body.config_uuid,
                     package_name=package_structure.name,
                     service_name=service_name,
                     method_name=method_name,
@@ -110,12 +110,12 @@ async def _add_mock_to_db(
     )
 
 
-async def get_route_log(query_params: Mapping, config: Config,) -> dict[str, list]:
+async def get_route_log(query_params: DownloadRunsRequest, config: Config) -> dict[str, list]:
     query_params = {
-        "package_name": query_params.get("package"),
-        "service_name": query_params.get("service"),
-        "method_name": query_params.get("method"),
-        "config_uuid": query_params.get("config_uuid"),
+        "package_name": query_params.package,
+        "service_name": query_params.service,
+        "method_name": query_params.method,
+        "config_uuid": query_params.config_uuid,
     }
     keys_to_remove = [key for key, value in query_params.items() if not value]
     for key in keys_to_remove:
@@ -137,7 +137,7 @@ async def get_route_log(query_params: Mapping, config: Config,) -> dict[str, lis
     }
 
 
-async def store_log(mock_id: int, request_data: dict, response_data: dict, config: Config, ):
+async def store_log(mock_id: int, request_data: dict, response_data: dict, config: Config):
     async with DbConnection(config) as db:
         await db.execute(
             "insert into logs (mock_id, request, response) values (:mock_id, :request, :response)",
