@@ -11,7 +11,7 @@ db.run:
 	@docker compose up -d db
 
 db.migrate:
-	@yoyo apply
+	@yoyo apply -d $(GRPC_MOCK_DATABASE_URL)
 
 db.clean:
 	@docker compose down -t 1

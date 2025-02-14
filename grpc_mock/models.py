@@ -1,27 +1,21 @@
-import json
-from typing import Any
-
-from pydantic import BaseModel
+from dataclasses import dataclass
+from datetime import datetime
 
 
-class _BaseModel(BaseModel, extra="forbid"):
-    pass
+@dataclass
+class MockFromStorage:
+    id: int
+    request_schema: dict
+    response_schema: dict
+    response_mock: dict
 
 
-class Mock(_BaseModel):
-    service: str
-    method: str
-    response: dict
-
-
-class UploadRunsRequest(_BaseModel):
-    mocks: list[Mock]
-    proto: str
+@dataclass
+class LogFromStorage:
     config_uuid: str
+    request: dict
+    response: dict
+    created_at: str
 
-
-class DownloadRunsRequest(_BaseModel):
-    package: str | None = None
-    service: str | None = None
-    method: str | None = None
-    config_uuid: str | None = None
+    def __post_init__(self):
+        self.created_at = str(self.created_at)
