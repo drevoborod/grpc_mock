@@ -91,9 +91,9 @@ def set_config():
 def get_logs():
     return httpx.get(url=url, params={"config_uuid": "UUID", "method": "BookAddEndpoint"})
 
-# res = set_config()
-res = get_logs()
+res = set_config()
+# res = get_logs()
 
 print(res.status_code)
-print(res.content)
+# print(res.content)
 print(res.json())
