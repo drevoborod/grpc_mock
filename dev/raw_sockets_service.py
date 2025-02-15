@@ -6,7 +6,7 @@ import h2.config
 import h2.connection
 import h2.events
 
-from grpc_mock.proto_utils import (
+from grpc_mock.proto_parser import (
     ProtoMethodStructure,
     get_request_typedef_from_proto_package,
     parse_proto_file,

@@ -5,14 +5,20 @@ class _BaseModel(BaseModel, extra="forbid"):
     pass
 
 
-class Mock(_BaseModel):
+class DefaultResponse(_BaseModel):
+    status: str
+    message: str
+    status_code: int
+
+
+class RequestMock(_BaseModel):
     service: str
     method: str
     response: dict
 
 
 class UploadRunsRequest(_BaseModel):
-    mocks: list[Mock]
+    mocks: list[RequestMock]
     proto: str
     config_uuid: str
 

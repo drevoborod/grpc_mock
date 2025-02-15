@@ -1,6 +1,6 @@
 from deepdiff import DeepDiff
 
-from grpc_mock.proto_utils import (
+from grpc_mock.proto_parser import (
     ProtoMethodStructure,
     parse_proto_file,
     get_request_typedef_from_proto_package,

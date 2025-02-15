@@ -2,7 +2,7 @@ import asyncio
 from hypercorn.config import Config as HypercornConfig
 from hypercorn.asyncio import serve
 
-from grpc_mock.service import app
+from grpc_mock.server import app
 from grpc_mock.config import create_config
 
 

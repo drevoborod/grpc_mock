@@ -1,5 +1,5 @@
-from grpc_mock.proto_utils import ProtoMethodStructure
-from grpc_mock.service import get_proto_method_structure_from_request
+from grpc_mock.proto_parser import ProtoMethodStructure
+from grpc_mock.server import get_proto_method_structure_from_request
 
 
 class MockRequestUrl:
