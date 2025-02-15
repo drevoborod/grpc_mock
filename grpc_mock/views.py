@@ -40,7 +40,8 @@ def parse_grpc_data(data: bytes, typedef: dict) -> dict:
     return message
 
 
-async def process_grpc_request(request: Request, db: Database) -> Response:
+async def process_grpc_request(request: Request) -> Response:
+    db = request.scope["state"]["db"]
     method_structure = get_proto_method_structure_from_request(request)
     mock_repo = MockRepo(db)
     storage_mock = await mock_repo.get_mock_from_storage(
@@ -66,11 +67,12 @@ async def process_grpc_request(request: Request, db: Database) -> Response:
     )
 
 
-async def process_rest_request(request: Request, mock_service: MockService, log_repo: LogRepo) -> Response:
+async def process_rest_request(request: Request) -> Response:
     match request.scope:
         case {"path": "/runs", "method": "POST"}:
             body = await request.json()
             request_data = UploadRunsRequest(**body)
+            mock_service: MockService = request.scope["state"]["mock_service"]
             await mock_service.store_mock(
                 proto=request_data.proto, config_uuid=request_data.config_uuid, mocks=request_data.mocks,
             )
@@ -81,6 +83,7 @@ async def process_rest_request(request: Request, mock_service: MockService, log_
             )
         case {"path": "/runs", "method": "GET"}:
             params = DownloadRunsRequest(**request.query_params)
+            log_repo: LogRepo = request.scope["state"]["log_repo"]
             response_data = await log_repo.get_route_log(
                 package=params.package, service=params.service, method=params.method, config_uuid=params.config_uuid,
             )

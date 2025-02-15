@@ -14,26 +14,32 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def prepare_container() -> dict:
-    config = create_config()
-    db = Database(config.db_url)
-    mock_repo = MockRepo(db)
-    log_repo = LogRepo(db)
-    mock_service = MockService(mock_repo)
-    return {"mock_service": mock_service, "db": db, "log_repo": log_repo}
-
-container = prepare_container()
+async def lifespan(scope, receive, send) -> None:
+    message = await receive()
+    if message["type"] == 'lifespan.startup':
+        config = create_config()
+        db = Database(config.db_url)
+        await db.connect()
+        mock_repo = MockRepo(db)
+        log_repo = LogRepo(db)
+        mock_service = MockService(mock_repo)
+        scope["state"].update(dict(mock_service=mock_service, db=db, log_repo=log_repo))
+        await send({"type": "lifespan.startup.complete"})
+    elif message["type"] == 'lifespan.shutdown':
+        await send({"type": "lifespan.shutdown.complete"})
 
 
 async def app(scope, receive, send):
     logger.info(scope)
-    await container["db"].connect()
     try:
         match scope:
+            case {"type": "lifespan"}:
+                await lifespan(scope, receive, send)
+                return
             case {"type": "http", "http_version": "2"}:
-                response = await process_grpc_request(Request(scope, receive), container["db"])
+                response = await process_grpc_request(Request(scope, receive))
             case {"type": "http", "http_version": "1.1"}:
-                response = await process_rest_request(Request(scope, receive), container["mock_service"], container["log_repo"])
+                response = await process_rest_request(Request(scope, receive))
             case _:
                 response_model = prepare_error_response(
                     "This server supports HTTP versions 2 and 1.1 only"

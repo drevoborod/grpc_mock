@@ -9,7 +9,7 @@ CREATE TABLE mocks (
     request_schema JSONB NOT NULL,
     response_schema JSONB NOT NULL,
     response_mock JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT (now() at time zone 'utc'),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT (now() at time zone 'utc'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted BOOLEAN
 );
