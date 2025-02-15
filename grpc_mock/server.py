@@ -6,7 +6,7 @@ from starlette.requests import Request
 
 from grpc_mock.config import create_config
 from grpc_mock.repo import MockRepo, LogRepo
-from grpc_mock.services import MockService
+from grpc_mock.services import MockService, GRPCService
 from grpc_mock.views import process_grpc_request, process_get_log, process_add_config, prepare_error_response
 
 logger = logging.getLogger(__name__)
@@ -15,16 +15,17 @@ logging.basicConfig(level=logging.INFO)
 
 async def lifespan(scope, receive, send) -> None:
     message = await receive()
-    if message["type"] == 'lifespan.startup':
+    if message["type"] == "lifespan.startup":
         config = create_config()
         db = Database(config.db_url)
         await db.connect()
         mock_repo = MockRepo(db)
         log_repo = LogRepo(db)
         mock_service = MockService(mock_repo)
-        scope["state"].update(dict(mock_service=mock_service, db=db, log_repo=log_repo))
+        grpc_service = GRPCService(mock_repo=mock_repo, log_repo=log_repo)
+        scope["state"].update(dict(grpc_service=grpc_service, mock_service=mock_service, db=db, log_repo=log_repo))
         await send({"type": "lifespan.startup.complete"})
-    elif message["type"] == 'lifespan.shutdown':
+    elif message["type"] == "lifespan.shutdown":
         await send({"type": "lifespan.shutdown.complete"})
 
 

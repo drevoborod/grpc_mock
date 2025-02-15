@@ -1,19 +1,13 @@
 import re
 from dataclasses import asdict
 
-import blackboxprotobuf
 from starlette import status
-from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from grpc_mock.proto_parser import ProtoMethodStructure
-from grpc_mock.repo import (
-    MockRepo,
-    LogRepo,
-)
-from grpc_mock.schemas import UploadRunsRequest, DownloadRunsRequest, DefaultResponse
-from grpc_mock.services import MockService
+from grpc_mock.repo import LogRepo
+from grpc_mock.schemas import UploadRunsRequest, DownloadRunsRequest, DefaultResponse, ProtoMethodStructure
+from grpc_mock.services import GRPCService, MockService
 
 
 def get_proto_method_structure_from_request(
@@ -34,33 +28,18 @@ def get_proto_method_structure_from_request(
     )
 
 
-def parse_grpc_data(data: bytes, typedef: dict) -> dict:
-    message, _ = blackboxprotobuf.decode_message(data[5:], typedef)
-    return message
-
-
 async def process_grpc_request(request: Request) -> Response:
-    db = request.scope["state"]["db"]
     method_structure = get_proto_method_structure_from_request(request)
-    mock_repo = MockRepo(db)
-    storage_mock = await mock_repo.get_mock_from_storage(
+    payload = await request.body()
+    grpc_service: GRPCService = request.scope["state"]["grpc_service"]
+    result = await grpc_service.process_grpc(
         package=method_structure.package,
         service=method_structure.service,
         method=method_structure.method,
-    )
-    payload = await request.body()
-    request_data = parse_grpc_data(payload, storage_mock.request_schema)
-    response_data = blackboxprotobuf.encode_message(
-        storage_mock.response_mock, storage_mock.response_schema
-    )
-    log_repo = LogRepo(db)
-    await log_repo.store_log(
-        storage_mock.id, request_data, storage_mock.response_mock
+        payload=payload,
     )
     return Response(
-        (0).to_bytes()
-        + len(response_data).to_bytes(4, "big", signed=False)
-        + response_data,
+        result,
         media_type="application/grpc",
         headers={"grpc-status": "0"},
     )

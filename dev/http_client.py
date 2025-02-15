@@ -95,5 +95,5 @@ res = set_config()
 # res = get_logs()
 
 print(res.status_code)
-print(res.content)
-# print(res.json())
+# print(res.content)
+print(res.json())

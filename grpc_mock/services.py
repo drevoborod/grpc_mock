@@ -1,11 +1,10 @@
 import json
 from datetime import datetime, UTC
 
-from starlette import status
-from starlette.responses import JSONResponse
+import blackboxprotobuf
 
 from grpc_mock.proto_parser import parse_proto_file
-from grpc_mock.repo import MockRepo
+from grpc_mock.repo import MockRepo, LogRepo
 from grpc_mock.schemas import RequestMock, DefaultResponse
 
 
@@ -62,4 +61,23 @@ class MockService:
                 mock_id, updated_at=now, is_deleted=True,
             )
 
-    async def get_mock(self): pass
+
+class GRPCService:
+    def __init__(self, mock_repo: MockRepo, log_repo: LogRepo):
+        self.mock_repo = mock_repo
+        self.log_repo = log_repo
+
+    async def process_grpc(self, package: str, service: str, method: str, payload: bytes) -> bytes:
+        storage_mock = await self.mock_repo.get_mock_from_storage(
+            package=package,
+            service=service,
+            method=method,
+        )
+        request_data, _ = blackboxprotobuf.decode_message(payload[5:], storage_mock.request_schema)
+        await self.log_repo.store_log(
+            storage_mock.id, request_data, storage_mock.response_mock
+        )
+        response_data = blackboxprotobuf.encode_message(
+            storage_mock.response_mock, storage_mock.response_schema
+        )
+        return (0).to_bytes() + len(response_data).to_bytes(4, "big", signed=False) + response_data

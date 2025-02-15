@@ -6,6 +6,9 @@ from databases import Database
 from grpc_mock.models import LogFromStorage, MockFromStorage
 
 
+class DatabaseError(Exception): pass
+
+
 class _Repo:
     def __init__(self, db: Database) -> None:
         self.db = db
@@ -23,6 +26,8 @@ class MockRepo(_Repo):
                 method_name=method,
             ),
         )
+        if not db_data:
+            raise DatabaseError(f"Mock not found. Search fields: package_name={package}, service_name={service}, method_name={method}")
         return MockFromStorage(
             id=db_data.id,
             request_schema=json.loads(db_data.request_schema),

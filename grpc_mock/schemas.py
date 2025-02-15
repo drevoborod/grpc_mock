@@ -27,3 +27,13 @@ class DownloadRunsRequest(_BaseModel):
     service: str | None = None
     method: str | None = None
     config_uuid: str | None = None
+
+
+class ProtoMethodStructure(_BaseModel):
+    """
+    Represents GRPC method parts which allow to identify the method inside a protobuf definition file.
+    """
+
+    package: str
+    service: str
+    method: str
