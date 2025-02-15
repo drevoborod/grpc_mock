@@ -2,7 +2,7 @@ import re
 from dataclasses import asdict
 
 import blackboxprotobuf
-from databases import Database
+from starlette import status
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
@@ -11,10 +11,9 @@ from grpc_mock.proto_parser import ProtoMethodStructure
 from grpc_mock.repo import (
     MockRepo,
     LogRepo,
-    StorageError,
 )
-from grpc_mock.schemas import UploadRunsRequest, DownloadRunsRequest
-from grpc_mock.services import prepare_error_response, prepare_default_response, MockService
+from grpc_mock.schemas import UploadRunsRequest, DownloadRunsRequest, DefaultResponse
+from grpc_mock.services import MockService
 
 
 def get_proto_method_structure_from_request(
@@ -67,31 +66,29 @@ async def process_grpc_request(request: Request) -> Response:
     )
 
 
-async def process_rest_request(request: Request) -> Response:
-    match request.scope:
-        case {"path": "/runs", "method": "POST"}:
-            body = await request.json()
-            request_data = UploadRunsRequest(**body)
-            mock_service: MockService = request.scope["state"]["mock_service"]
-            await mock_service.store_mock(
-                proto=request_data.proto, config_uuid=request_data.config_uuid, mocks=request_data.mocks,
-            )
-            response_model = prepare_default_response("configuration stored")
-            return JSONResponse(
-                response_model.model_dump(),
-                status_code=response_model.status_code,
-            )
-        case {"path": "/runs", "method": "GET"}:
-            params = DownloadRunsRequest(**request.query_params)
-            log_repo: LogRepo = request.scope["state"]["log_repo"]
-            response_data = await log_repo.get_route_log(
-                package=params.package, service=params.service, method=params.method, config_uuid=params.config_uuid,
-            )
-            response = JSONResponse([asdict(x) for x in response_data])
-        case _:
-            response_model = prepare_error_response("unknown endpoint or unsupported method")
-            response = JSONResponse(
-                response_model.model_dump(),
-                status_code=response_model.status_code,
-            )
-    return response
+async def process_add_config(request: Request) -> JSONResponse:
+    body = await request.json()
+    request_data = UploadRunsRequest(**body)
+    mock_service: MockService = request.scope["state"]["mock_service"]
+    response_model = await mock_service.store_mock(
+        proto=request_data.proto, config_uuid=request_data.config_uuid, mocks=request_data.mocks,
+    )
+    return JSONResponse(
+        response_model.model_dump(),
+    )
+
+
+async def process_get_log(request: Request) -> JSONResponse:
+    params = DownloadRunsRequest(**request.query_params)
+    log_repo: LogRepo = request.scope["state"]["log_repo"]
+    response_data = await log_repo.get_route_log(
+        package=params.package, service=params.service, method=params.method, config_uuid=params.config_uuid,
+    )
+    return JSONResponse([asdict(x) for x in response_data])
+
+
+def prepare_error_response(message: str, status_code: int = status.HTTP_400_BAD_REQUEST) -> JSONResponse:
+    model = DefaultResponse(status="error", message=message)
+    return JSONResponse(
+        model.model_dump(), status_code=status_code
+    )

@@ -1,13 +1,9 @@
 import json
-from datetime import datetime, UTC
+from datetime import datetime
 
 from databases import Database
 
 from grpc_mock.models import LogFromStorage, MockFromStorage
-
-
-class StorageError(Exception):
-    pass
 
 
 class _Repo:

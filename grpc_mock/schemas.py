@@ -8,7 +8,6 @@ class _BaseModel(BaseModel, extra="forbid"):
 class DefaultResponse(_BaseModel):
     status: str
     message: str
-    status_code: int
 
 
 class RequestMock(_BaseModel):
