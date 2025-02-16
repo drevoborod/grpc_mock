@@ -70,17 +70,19 @@ service Books {
 payload = {
     "mocks": [
         {
+            "package": "library",
             "service": "Books",
             "method": "BookAddEndpoint",
             "response": {"transaction_uuid": "111", "user_id": 190}
         },
         {
+            "package": "library",
             "service": "Books",
             "method": "BookRemoveEndpoint",
             "response": {"transaction_uuid": "333", "user_id": 222}
         }
     ],
-    "proto": PROTO,
+    "protos": [PROTO],
     "config_uuid": "UUID"
 }
 url = URL(scheme="http", host="127.0.0.1", port=3333, path="/runs")

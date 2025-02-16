@@ -6,7 +6,12 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
 from grpc_mock.repo import LogRepo
-from grpc_mock.schemas import UploadRunsRequest, DownloadRunsRequest, DefaultResponse, ProtoMethodStructure
+from grpc_mock.schemas import (
+    UploadRunsRequest,
+    DownloadRunsRequest,
+    DefaultResponse,
+    ProtoMethodStructure,
+)
 from grpc_mock.services import GRPCService, MockService
 
 
@@ -50,7 +55,9 @@ async def process_add_config(request: Request) -> JSONResponse:
     request_data = UploadRunsRequest(**body)
     mock_service: MockService = request.scope["state"]["mock_service"]
     response_model = await mock_service.store_mock(
-        proto=request_data.proto, config_uuid=request_data.config_uuid, mocks=request_data.mocks,
+        protos=request_data.protos,
+        config_uuid=request_data.config_uuid,
+        mocks=request_data.mocks,
     )
     return JSONResponse(
         response_model.model_dump(),
@@ -61,13 +68,16 @@ async def process_get_log(request: Request) -> JSONResponse:
     params = DownloadRunsRequest(**request.query_params)
     log_repo: LogRepo = request.scope["state"]["log_repo"]
     response_data = await log_repo.get_route_log(
-        package=params.package, service=params.service, method=params.method, config_uuid=params.config_uuid,
+        package=params.package,
+        service=params.service,
+        method=params.method,
+        config_uuid=params.config_uuid,
     )
     return JSONResponse([asdict(x) for x in response_data])
 
 
-def prepare_error_response(message: str, status_code: int = status.HTTP_400_BAD_REQUEST) -> JSONResponse:
+def prepare_error_response(
+    message: str, status_code: int = status.HTTP_400_BAD_REQUEST
+) -> JSONResponse:
     model = DefaultResponse(status="error", message=message)
-    return JSONResponse(
-        model.model_dump(), status_code=status_code
-    )
+    return JSONResponse(model.model_dump(), status_code=status_code)

@@ -11,6 +11,7 @@ class DefaultResponse(_BaseModel):
 
 
 class RequestMock(_BaseModel):
+    package: str
     service: str
     method: str
     response: dict
@@ -18,7 +19,7 @@ class RequestMock(_BaseModel):
 
 class UploadRunsRequest(_BaseModel):
     mocks: list[RequestMock]
-    proto: str
+    protos: list[str]
     config_uuid: str
 
 
