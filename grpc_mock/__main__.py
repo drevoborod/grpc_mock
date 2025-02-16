@@ -6,7 +6,6 @@ from grpc_mock.server import app
 from grpc_mock.config import create_config
 
 
-
 if __name__ == "__main__":
     config = create_config()
     hyper_config = HypercornConfig()

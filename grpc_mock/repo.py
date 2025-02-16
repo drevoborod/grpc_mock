@@ -6,7 +6,8 @@ from databases import Database
 from grpc_mock.models import LogFromStorage, MockFromStorage
 
 
-class DatabaseError(Exception): pass
+class DatabaseError(Exception):
+    pass
 
 
 class _Repo:
@@ -15,7 +16,9 @@ class _Repo:
 
 
 class MockRepo(_Repo):
-    async def get_mock_from_storage(self, package: str, service: str, method: str) -> MockFromStorage:
+    async def get_mock_from_storage(
+        self, package: str, service: str, method: str
+    ) -> MockFromStorage:
         db_data = await self.db.fetch_one(
             "select id, request_schema, response_schema, response_mock "
             "from mocks where package_name=:package_name and service_name=:service_name "
@@ -27,7 +30,9 @@ class MockRepo(_Repo):
             ),
         )
         if not db_data:
-            raise DatabaseError(f"Mock not found. Search fields: package_name={package}, service_name={service}, method_name={method}")
+            raise DatabaseError(
+                f"Mock not found. Search fields: package_name={package}, service_name={service}, method_name={method}"
+            )
         return MockFromStorage(
             id=db_data.id,
             request_schema=json.loads(db_data.request_schema),
@@ -36,10 +41,10 @@ class MockRepo(_Repo):
         )
 
     async def get_enabled_mock_ids(
-            self,
-            package_name: str,
-            service_name: str,
-            method_name: str,
+        self,
+        package_name: str,
+        service_name: str,
+        method_name: str,
     ) -> list[int]:
         result = await self.db.fetch_all(
             "select id from mocks where package_name=:package_name "
@@ -53,25 +58,26 @@ class MockRepo(_Repo):
         return [x.id for x in result]
 
     async def update_mock(
-            self,
-            mock_id: int,
-            updated_at: datetime,
-            is_deleted: bool = True
+        self, mock_id: int, updated_at: datetime, is_deleted: bool = True
     ):
         await self.db.execute(
             "update mocks set is_deleted=:is_deleted, updated_at=:updated_at where id=:id",
-            values={"is_deleted": is_deleted, "updated_at": updated_at, "id": mock_id},
+            values={
+                "is_deleted": is_deleted,
+                "updated_at": updated_at,
+                "id": mock_id,
+            },
         )
 
     async def add_mock_to_db(
-            self,
-            config_uuid: str,
-            package_name: str,
-            service_name: str,
-            method_name: str,
-            request_schema: str,
-            response_schema: str,
-            response_mock: str,
+        self,
+        config_uuid: str,
+        package_name: str,
+        service_name: str,
+        method_name: str,
+        request_schema: str,
+        response_schema: str,
+        response_mock: str,
     ) -> None:
         await self.db.execute(
             "insert into mocks (config_uuid, package_name, service_name, method_name, request_schema, response_schema, response_mock, is_deleted) "
@@ -91,9 +97,12 @@ class MockRepo(_Repo):
 
 class LogRepo(_Repo):
     async def get_route_log(
-            self, package: str | None, service: str | None, method: str | None, config_uuid: str | None,
+        self,
+        package: str | None,
+        service: str | None,
+        method: str | None,
+        config_uuid: str | None,
     ) -> list[LogFromStorage]:
-
         query_params = {}
         if package:
             query_params["package_name"] = package
@@ -123,8 +132,9 @@ class LogRepo(_Repo):
             for item in result
         ]
 
-
-    async def store_log(self, mock_id: int, request_data: dict, response_data: dict) -> None:
+    async def store_log(
+        self, mock_id: int, request_data: dict, response_data: dict
+    ) -> None:
         await self.db.execute(
             "insert into logs (mock_id, request, response) values (:mock_id, :request, :response)",
             values={

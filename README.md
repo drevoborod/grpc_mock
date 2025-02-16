@@ -10,17 +10,19 @@ POST /runs
 body: {
     "mocks": [
         {
+            "package": "library",
             "service": "Books",
             "method": "BookAddEndpoint",
             "response": {}
         },
         {
+            "package": "library",
             "service": "Books",
             "method": "BookRemoveEndpoint",
             "response": {}
         }
     ],
-    "proto": "<proto file contents>",
+    "protos": ["<proto file1 contents>", "<proto file2 contents>"],
     "config_uuid": "UUID"
 }
 ```
@@ -35,7 +37,5 @@ params:
         "service": "Books",
         "method": "BookAddEndpoint",
         "config_uuid": "UUID",
-        "from": "2025-01-18T12:33:01.432Z",
-        "to": "2025-01-18T12:35:01.432Z"
     }
 ```

@@ -52,17 +52,30 @@ class ProtoFileParser:
 
         :param protos: list of .proto files contents.
         """
-        raw_typedefs = [import_proto(default_config, input_string=proto) for proto in protos]
-        self._raw_typedef: dict = raw_typedefs[0]
-        for typedef in raw_typedefs[1:]:
+        raw_typedefs = [
+            import_proto(default_config, input_string=proto) for proto in protos
+        ]
+        self._raw_typedef = {}
+        for typedef in raw_typedefs:
             self._raw_typedef.update(typedef)
-        proto_element_lists = [Parser().parse(proto).file_elements for proto in protos]
+        proto_element_lists = [
+            Parser().parse(proto).file_elements for proto in protos
+        ]
         self._packages_dict: dict[str, dict[str, Service]] = {}
         for elem_list in proto_element_lists:
             self._add_package_to_packages_dict(elem_list)
 
-    def _add_package_to_packages_dict(self, proto_element_list: list[ProtoElement]) -> None:
-        package_name = next((item.name for item in proto_element_list if isinstance(item, Package)), "")
+    def _add_package_to_packages_dict(
+        self, proto_element_list: list[ProtoElement]
+    ) -> None:
+        package_name = next(
+            (
+                item.name
+                for item in proto_element_list
+                if isinstance(item, Package)
+            ),
+            "",
+        )
         if not package_name:
             raise ProtoParserError("There is no package in provided proto file")
         self._packages_dict[package_name] = {}
@@ -71,24 +84,28 @@ class ProtoFileParser:
                 self._packages_dict[package_name][item.name] = item
 
     def parse_protos(self) -> ProtoRootStructure:
-        return ProtoRootStructure(
-            packages=self._prepare_packages()
-        )
+        return ProtoRootStructure(packages=self._prepare_packages())
 
     def _prepare_packages(self) -> dict[str, ProtoPackage]:
         result = {}
         for package_name, services_dict in self._packages_dict.items():
             result[package_name] = ProtoPackage(
-                name=package_name, services=self._prepare_services(package_name, services_dict))
+                name=package_name,
+                services=self._prepare_services(package_name, services_dict),
+            )
         return result
 
-    def _prepare_services(self, package_name: str, services_dict: dict[str, Service]) -> dict[str, ProtoService]:
+    def _prepare_services(
+        self, package_name: str, services_dict: dict[str, Service]
+    ) -> dict[str, ProtoService]:
         return {
             key: self._prepare_methods_in_service(value, package_name)
             for key, value in services_dict.items()
         }
 
-    def _prepare_methods_in_service(self, service: Service, package_name: str) -> ProtoService:
+    def _prepare_methods_in_service(
+        self, service: Service, package_name: str
+    ) -> ProtoService:
         methods = {}
         for item in service.elements:
             if isinstance(item, Method):
@@ -99,14 +116,10 @@ class ProtoFileParser:
         return ProtoMethod(
             name=method.name,
             request=self._prepare_typedef_message(
-                self._raw_typedef[
-                    f"{package_name}.{method.input_type.type}"
-                ]
+                self._raw_typedef[f"{package_name}.{method.input_type.type}"]
             ),
             response=self._prepare_typedef_message(
-                self._raw_typedef[
-                    f"{package_name}.{method.output_type.type}"
-                ]
+                self._raw_typedef[f"{package_name}.{method.output_type.type}"]
             ),
         )
 
