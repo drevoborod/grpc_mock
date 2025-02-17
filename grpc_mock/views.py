@@ -3,9 +3,10 @@ from dataclasses import asdict
 
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
+from starlette.responses import JSONResponse
 
 from grpc_mock.repo import LogRepo
+from grpc_mock.reponse import GRPCResponse
 from grpc_mock.schemas import (
     UploadRunsRequest,
     DownloadRunsRequest,
@@ -33,7 +34,7 @@ def get_proto_method_structure_from_request(
     )
 
 
-async def process_grpc_request(request: Request) -> Response:
+async def process_grpc_request(request: Request) -> GRPCResponse:
     method_structure = get_proto_method_structure_from_request(request)
     payload = await request.body()
     grpc_service: GRPCService = request.scope["state"]["grpc_service"]
@@ -43,7 +44,7 @@ async def process_grpc_request(request: Request) -> Response:
         method=method_structure.method,
         payload=payload,
     )
-    return Response(
+    return GRPCResponse(
         result,
         media_type="application/grpc",
         headers={"grpc-status": "0"},
