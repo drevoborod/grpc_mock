@@ -6,7 +6,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from grpc_mock.repo import LogRepo
-from grpc_mock.reponse import GRPCResponse
+from grpc_mock.response import GRPCResponse
 from grpc_mock.schemas import (
     UploadRunsRequest,
     DownloadRunsRequest,
