@@ -3,7 +3,7 @@ from datetime import datetime, UTC
 
 import blackboxprotobuf
 
-from grpc_mock.proto_parser import parse_proto_file
+from grpc_mock.proto_parser import parse_proto_file, ProtoMethod
 from grpc_mock.repo import MockRepo, LogRepo
 from grpc_mock.schemas import RequestMock, DefaultResponse
 
@@ -19,36 +19,25 @@ class MockService:
         Parse mocks from a configuration request and save them to the storage.
         """
         root_structure = parse_proto_file(protos)
-        mock_mapping = {}
         for mock in mocks:
-            package_mapping = mock_mapping.get(mock.package, {})
-            service_mapping = package_mapping.get(mock.service, {})
-            service_mapping[mock.method] = mock.response
-            package_mapping[mock.service] = service_mapping
-            mock_mapping[mock.package] = package_mapping
+            await self._disable_old_mocks(
+                package_name=mock.package,
+                service_name=mock.service,
+                method_name=mock.method,
+            )
 
-        for package_name, package in root_structure.packages.items():
-            for service_name, service in package.services.items():
-                for method_name, method in service.methods.items():
-                    await self._disable_old_mocks(
-                        package_name=package_name,
-                        service_name=service_name,
-                        method_name=method_name,
-                    )
-                    await self.repo.add_mock_to_db(
-                        config_uuid=config_uuid,
-                        package_name=package_name,
-                        service_name=service_name,
-                        method_name=method_name,
-                        request_schema=json.dumps(method.request),
-                        response_schema=json.dumps(method.response),
-                        response_mock=json.dumps(
-                            mock_mapping[package_name][service_name][
-                                method_name
-                            ],
-                            ensure_ascii=False,
-                        ),
-                    )
+            method: ProtoMethod = root_structure.packages[mock.package].services[mock.service].methods[mock.method]
+
+            await self.repo.add_mock_to_db(
+                config_uuid=config_uuid,
+                package_name=mock.package,
+                service_name=mock.service,
+                method_name=mock.method,
+                request_schema=json.dumps(method.request),
+                response_schema=json.dumps(method.response),
+                response_mock=json.dumps(mock.response, ensure_ascii=False),
+            )
+
         return DefaultResponse(
             status="ok",
             message="Mock configuration added successfully",
