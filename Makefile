@@ -1,6 +1,10 @@
 -include .env
 export
 
+
+build:
+	@docker-compose build
+
 test:
 	@pytest
 
@@ -19,5 +23,11 @@ db.clean:
 dev.run:
 	@python -m grpc_mock
 
+local.run: db.run db.migrate
+	@docker compose up -d api
+
+local.stop:
+	@docker compose down
+
 run:
-	@hypercorn grpc_mock.service:app -b $(GRPC_MOCK_HOST):$(GRPC_MOCK_PORT)
+	@hypercorn grpc_mock.server:app -b $(GRPC_MOCK_HOST):$(GRPC_MOCK_PORT)
