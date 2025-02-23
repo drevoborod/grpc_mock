@@ -39,7 +39,7 @@ To stop running service:
 ### Set mock service parameters including response
 #### Example
 ```
-POST /runs
+POST /mocks
 body: {
     "mocks": [
         {
@@ -65,7 +65,7 @@ Actually, they do not really correspond to the specific test run but will be sam
 ### Get mock service log for specific GRPC method or test run
 #### Example
 ```
-GET /runs
+GET /logs
 Query params: 
     {
         "package": "library",
@@ -74,3 +74,29 @@ Query params:
         "config_uuid": "UUID",
     }
 ```
+
+### Get current mocks configuration
+#### Example
+```
+GET /mocks
+Query params: 
+    {
+        "package": "library",
+        "service": "Books",
+        "method": "BookAddEndpoint",
+    }
+```
+
+### Delete mock for specific GRPC endpoint
+#### Example
+```
+DELETE /mocks
+Query params: 
+    {
+        "package": "library",
+        "service": "Books",
+        "method": "BookAddEndpoint",
+    }
+```
+
+

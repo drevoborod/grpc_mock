@@ -12,6 +12,7 @@ from grpc_mock.schemas import (
     DownloadRunsRequest,
     DefaultResponse,
     ProtoMethodStructure,
+    MockFromGetRequest,
 )
 from grpc_mock.services import GRPCService, MockService
 
@@ -51,15 +52,20 @@ async def process_grpc_request(request: Request) -> GRPCResponse:
     )
 
 
-async def process_add_config(request: Request) -> JSONResponse:
+async def process_add_mocks(request: Request) -> JSONResponse:
     body = await request.json()
     request_data = UploadRunsRequest(**body)
     mock_service: MockService = request.scope["state"]["mock_service"]
-    response_model = await mock_service.store_mock(
+    await mock_service.store_mocks(
         protos=request_data.protos,
         config_uuid=request_data.config_uuid,
         mocks=request_data.mocks,
     )
+    response_model = DefaultResponse(
+        status="ok",
+        message="Mock configuration added successfully",
+    )
+
     return JSONResponse(
         response_model.model_dump(),
     )
@@ -75,6 +81,30 @@ async def process_get_log(request: Request) -> JSONResponse:
         config_uuid=params.config_uuid,
     )
     return JSONResponse([asdict(x) for x in response_data])
+
+
+async def process_get_mocks(request: Request):
+    params = MockFromGetRequest(**request.query_params)
+    mock_service: MockService = request.scope["state"]["mock_service"]
+    response_data = await mock_service.get_mocks(
+        package=params.package, service=params.service, method=params.method
+    )
+    return JSONResponse([asdict(x) for x in response_data])
+
+
+async def process_delete_mocks(request: Request):
+    params = MockFromGetRequest(**request.query_params)
+    mock_service: MockService = request.scope["state"]["mock_service"]
+    await mock_service.delete_mocks(
+        package=params.package, service=params.service, method=params.method
+    )
+    response_model = DefaultResponse(
+        status="ok",
+        message="Mock configuration deleted successfully",
+    )
+    return JSONResponse(
+        response_model.model_dump(),
+    )
 
 
 def prepare_error_response(

@@ -85,16 +85,9 @@ payload = {
     "protos": [PROTO],
     "config_uuid": "UUID"
 }
-url = URL(scheme="http", host="127.0.0.1", port=3333, path="/runs")
+url = URL(scheme="http", host="127.0.0.1", port=3333, path="/mocks")
 
-def set_config():
-    return httpx.post(url, json=payload)
-
-def get_logs():
-    return httpx.get(url=url, params={"config_uuid": "UUID", "method": "BookAddEndpoint"})
-
-res = set_config()
-# res = get_logs()
+res = httpx.post(url, json=payload)
 
 print(res.status_code)
 # print(res.content)

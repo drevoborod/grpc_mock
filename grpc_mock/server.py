@@ -3,6 +3,7 @@ import logging
 from databases import Database
 from starlette import status
 from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from grpc_mock.config import create_config
 from grpc_mock.repo import MockRepo, LogRepo
@@ -10,12 +11,43 @@ from grpc_mock.services import MockService, GRPCService
 from grpc_mock.views import (
     process_grpc_request,
     process_get_log,
-    process_add_config,
+    process_add_mocks,
+    process_get_mocks,
+    process_delete_mocks,
     prepare_error_response,
 )
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+
+async def process_rest_requests(scope, receive) -> JSONResponse:
+    match scope:
+        case {
+            "path": "/mocks",
+            "method": "POST",
+        }:
+            return await process_add_mocks(Request(scope, receive))
+        case {
+            "path": "/logs",
+            "method": "GET",
+        }:
+            return await process_get_log(Request(scope, receive))
+        case {
+            "path": "/mocks",
+            "method": "GET",
+        }:
+            return await process_get_mocks(Request(scope, receive))
+        case {
+            "path": "/mocks",
+            "method": "DELETE",
+        }:
+            return await process_delete_mocks(Request(scope, receive))
+        case _:
+            return prepare_error_response(
+                "Unknown endpoint",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
 
 async def lifespan(scope, receive, send) -> None:
@@ -50,24 +82,10 @@ async def app(scope, receive, send):
                 return
             case {"type": "http", "http_version": "2"}:
                 response = await process_grpc_request(Request(scope, receive))
-            case {
-                "type": "http",
-                "http_version": "1.1",
-                "path": "/runs",
-                "method": "POST",
-            }:
-                response = await process_add_config(Request(scope, receive))
-            case {
-                "type": "http",
-                "http_version": "1.1",
-                "path": "/runs",
-                "method": "GET",
-            }:
-                response = await process_get_log(Request(scope, receive))
+            case {"type": "http", "http_version": "1.1"}:
+                response = await process_rest_requests(scope, receive)
             case _:
-                response = prepare_error_response(
-                    "Unknown endpoint or unsupported method or protocol"
-                )
+                response = prepare_error_response("Unsupported protocol")
 
     except Exception as err:
         logger.error(err)

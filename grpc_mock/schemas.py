@@ -10,15 +10,21 @@ class DefaultResponse(_BaseModel):
     message: str
 
 
-class RequestMock(_BaseModel):
+class MockFromSetRequest(_BaseModel):
     package: str
     service: str
     method: str
     response: dict
 
 
+class MockFromGetRequest(_BaseModel):
+    package: str
+    service: str
+    method: str
+
+
 class UploadRunsRequest(_BaseModel):
-    mocks: list[RequestMock]
+    mocks: list[MockFromSetRequest]
     protos: list[str]
     config_uuid: str
 

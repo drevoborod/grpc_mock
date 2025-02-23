@@ -16,10 +16,10 @@ class _Repo:
 
 
 class MockRepo(_Repo):
-    async def get_mock_from_storage(
+    async def get_mocks_from_storage(
         self, package: str, service: str, method: str
-    ) -> MockFromStorage:
-        db_data = await self.db.fetch_one(
+    ) -> list[MockFromStorage]:
+        db_data = await self.db.fetch_all(
             "select id, request_schema, response_schema, response_mock "
             "from mocks where package_name=:package_name and service_name=:service_name "
             "and method_name=:method_name and is_deleted is false",
@@ -31,14 +31,17 @@ class MockRepo(_Repo):
         )
         if not db_data:
             raise DatabaseError(
-                f"Mock not found. Search fields: package_name={package}, service_name={service}, method_name={method}"
+                f"Mocks not found. Search fields: package_name={package}, service_name={service}, method_name={method}"
             )
-        return MockFromStorage(
-            id=db_data.id,
-            request_schema=json.loads(db_data.request_schema),
-            response_schema=json.loads(db_data.response_schema),
-            response_mock=json.loads(db_data.response_mock),
-        )
+        return [
+            MockFromStorage(
+                id=x.id,
+                request_schema=json.loads(x.request_schema),
+                response_schema=json.loads(x.response_schema),
+                response_mock=json.loads(x.response_mock),
+            )
+            for x in db_data
+        ]
 
     async def get_enabled_mock_ids(
         self,
@@ -58,15 +61,18 @@ class MockRepo(_Repo):
         return [x.id for x in result]
 
     async def update_mock(
-        self, mock_id: int, updated_at: datetime, is_deleted: bool = True
+        self, mock_ids: list[int], updated_at: datetime, is_deleted: bool = True
     ):
-        await self.db.execute(
+        await self.db.execute_many(
             "update mocks set is_deleted=:is_deleted, updated_at=:updated_at where id=:id",
-            values={
-                "is_deleted": is_deleted,
-                "updated_at": updated_at,
-                "id": mock_id,
-            },
+            values=[
+                {
+                    "is_deleted": is_deleted,
+                    "updated_at": updated_at,
+                    "id": x,
+                }
+                for x in mock_ids
+            ],
         )
 
     async def add_mock_to_db(

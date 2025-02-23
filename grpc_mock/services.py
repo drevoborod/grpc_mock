@@ -3,18 +3,26 @@ from datetime import datetime, UTC
 
 import blackboxprotobuf
 
+from grpc_mock.models import MockFromStorage
 from grpc_mock.proto_parser import parse_proto_file, ProtoMethod
-from grpc_mock.repo import MockRepo, LogRepo
-from grpc_mock.schemas import RequestMock, DefaultResponse
+from grpc_mock.repo import MockRepo, LogRepo, DatabaseError
+from grpc_mock.schemas import (
+    MockFromSetRequest,
+    DefaultResponse,
+    MockFromGetRequest,
+)
 
 
 class MockService:
     def __init__(self, repo: MockRepo):
         self.repo = repo
 
-    async def store_mock(
-        self, protos: list[str], config_uuid: str, mocks: list[RequestMock]
-    ) -> DefaultResponse:
+    async def store_mocks(
+        self,
+        protos: list[str],
+        config_uuid: str,
+        mocks: list[MockFromSetRequest],
+    ) -> None:
         """
         Parse mocks from a configuration request and save them to the storage.
         """
@@ -26,7 +34,11 @@ class MockService:
                 method_name=mock.method,
             )
 
-            method: ProtoMethod = root_structure.packages[mock.package].services[mock.service].methods[mock.method]
+            method: ProtoMethod = (
+                root_structure.packages[mock.package]
+                .services[mock.service]
+                .methods[mock.method]
+            )
 
             await self.repo.add_mock_to_db(
                 config_uuid=config_uuid,
@@ -37,11 +49,6 @@ class MockService:
                 response_schema=json.dumps(method.response),
                 response_mock=json.dumps(mock.response, ensure_ascii=False),
             )
-
-        return DefaultResponse(
-            status="ok",
-            message="Mock configuration added successfully",
-        )
 
     async def _disable_old_mocks(
         self,
@@ -55,12 +62,29 @@ class MockService:
             method_name=method_name,
         )
         now = datetime.now(UTC)
-        for mock_id in mock_ids:
-            await self.repo.update_mock(
-                mock_id,
-                updated_at=now,
-                is_deleted=True,
+        await self.repo.update_mock(
+            mock_ids,
+            updated_at=now,
+            is_deleted=True,
+        )
+
+    async def get_mocks(
+        self, package, service, method
+    ) -> list[MockFromStorage]:
+        try:
+            res = await self.repo.get_mocks_from_storage(
+                package=package, service=service, method=method
             )
+        except DatabaseError:
+            return []
+        return res
+
+    async def delete_mocks(self, package, service, method) -> None:
+        ids = await self.repo.get_enabled_mock_ids(
+            package_name=package, service_name=service, method_name=method
+        )
+        now = datetime.now(UTC)
+        await self.repo.update_mock(mock_ids=ids, updated_at=now)
 
 
 class GRPCService:
@@ -71,11 +95,13 @@ class GRPCService:
     async def process_grpc(
         self, package: str, service: str, method: str, payload: bytes
     ) -> bytes:
-        storage_mock = await self.mock_repo.get_mock_from_storage(
-            package=package,
-            service=service,
-            method=method,
-        )
+        storage_mock = (
+            await self.mock_repo.get_mocks_from_storage(
+                package=package,
+                service=service,
+                method=method,
+            )
+        )[0]
         request_data, _ = blackboxprotobuf.decode_message(
             payload[5:], storage_mock.request_schema
         )
