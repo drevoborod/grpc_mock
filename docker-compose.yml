@@ -7,3 +7,13 @@ services:
       POSTGRES_DB: ${GRPC_MOCK_DATABASE_NAME}
     ports:
       - "${GRPC_MOCK_DATABASE_PORT}:5432"
+  api:
+    build: .
+    env_file:
+      - .env
+    environment:
+      GRPC_MOCK_DATABASE_URL: "postgresql://${GRPC_MOCK_DATABASE_USER}:${GRPC_MOCK_DATABASE_PASSWORD}@db:5432/${GRPC_MOCK_DATABASE_NAME}"
+    depends_on:
+      - db
+    ports:
+      - "${GRPC_MOCK_PORT}:${GRPC_MOCK_PORT}"
