@@ -15,6 +15,7 @@ class MockFromSetRequest(_BaseModel):
     service: str
     method: str
     response: dict
+    response_status: int | None = 0
 
 
 class MockFromGetRequest(_BaseModel):
@@ -23,13 +24,13 @@ class MockFromGetRequest(_BaseModel):
     method: str
 
 
-class UploadRunsRequest(_BaseModel):
+class UploadMocksRequest(_BaseModel):
     mocks: list[MockFromSetRequest]
     protos: list[str]
     config_uuid: str
 
 
-class DownloadRunsRequest(_BaseModel):
+class DownloadMocksRequest(_BaseModel):
     package: str | None = None
     service: str | None = None
     method: str | None = None

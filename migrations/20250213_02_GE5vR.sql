@@ -5,6 +5,7 @@ CREATE TABLE logs (
     mock_id INTEGER NOT NULL,
     request JSONB NOT NULL,
     response JSONB NOT NULL,
+    response_status SMALLINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     FOREIGN KEY(mock_id) REFERENCES mocks (id)
 );
