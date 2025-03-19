@@ -8,8 +8,8 @@ from starlette.responses import JSONResponse
 from grpc_mock.repo import LogRepo
 from grpc_mock.response import GRPCResponse
 from grpc_mock.schemas import (
-    UploadRunsRequest,
-    DownloadRunsRequest,
+    UploadMocksRequest,
+    DownloadMocksRequest,
     DefaultResponse,
     ProtoMethodStructure,
     MockFromGetRequest,
@@ -39,22 +39,22 @@ async def process_grpc_request(request: Request) -> GRPCResponse:
     method_structure = get_proto_method_structure_from_request(request)
     payload = await request.body()
     grpc_service: GRPCService = request.scope["state"]["grpc_service"]
-    result = await grpc_service.process_grpc(
+    response_body, response_status = await grpc_service.process_grpc(
         package=method_structure.package,
         service=method_structure.service,
         method=method_structure.method,
         payload=payload,
     )
     return GRPCResponse(
-        result,
+        response_body,
         media_type="application/grpc",
-        headers={"grpc-status": "0"},
+        headers={"grpc-status": str(response_status)},
     )
 
 
 async def process_add_mocks(request: Request) -> JSONResponse:
     body = await request.json()
-    request_data = UploadRunsRequest(**body)
+    request_data = UploadMocksRequest(**body)
     mock_service: MockService = request.scope["state"]["mock_service"]
     await mock_service.store_mocks(
         protos=request_data.protos,
@@ -72,7 +72,7 @@ async def process_add_mocks(request: Request) -> JSONResponse:
 
 
 async def process_get_log(request: Request) -> JSONResponse:
-    params = DownloadRunsRequest(**request.query_params)
+    params = DownloadMocksRequest(**request.query_params)
     log_repo: LogRepo = request.scope["state"]["log_repo"]
     response_data = await log_repo.get_route_log(
         package=params.package,

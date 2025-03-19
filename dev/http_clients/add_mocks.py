@@ -73,7 +73,8 @@ payload = {
             "package": "library",
             "service": "Books",
             "method": "BookAddEndpoint",
-            "response": {"transaction_uuid": "111", "user_id": 190}
+            "response": {"transaction_uuid": "111", "user_id": 190},
+            "response_status": 0
         },
         {
             "package": "library",

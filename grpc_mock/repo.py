@@ -20,7 +20,7 @@ class MockRepo(_Repo):
         self, package: str, service: str, method: str
     ) -> list[MockFromStorage]:
         db_data = await self.db.fetch_all(
-            "select id, request_schema, response_schema, response_mock "
+            "select id, request_schema, response_schema, response_mock, response_status "
             "from mocks where package_name=:package_name and service_name=:service_name "
             "and method_name=:method_name and is_deleted is false",
             values=dict(
@@ -39,6 +39,7 @@ class MockRepo(_Repo):
                 request_schema=json.loads(x.request_schema),
                 response_schema=json.loads(x.response_schema),
                 response_mock=json.loads(x.response_mock),
+                response_status=x.response_status,
             )
             for x in db_data
         ]
@@ -84,10 +85,14 @@ class MockRepo(_Repo):
         request_schema: str,
         response_schema: str,
         response_mock: str,
+        response_status: int,
     ) -> None:
         await self.db.execute(
-            "insert into mocks (config_uuid, package_name, service_name, method_name, request_schema, response_schema, response_mock, is_deleted) "
-            "values (:config_uuid, :package_name, :service_name, :method_name, :request_schema, :response_schema, :response_mock, :is_deleted)",
+            "insert into mocks "
+            "(config_uuid, package_name, service_name, method_name, request_schema, response_schema, "
+            "response_mock, response_status, is_deleted) "
+            "values (:config_uuid, :package_name, :service_name, :method_name, :request_schema, :response_schema, "
+            ":response_mock, :response_status, :is_deleted)",
             values=dict(
                 config_uuid=config_uuid,
                 package_name=package_name,
@@ -96,6 +101,7 @@ class MockRepo(_Repo):
                 request_schema=request_schema,
                 response_schema=response_schema,
                 response_mock=response_mock,
+                response_status=response_status,
                 is_deleted=False,
             ),
         )
@@ -123,7 +129,7 @@ class LogRepo(_Repo):
         if clause:
             clause = f" where {clause}"
         result = await self.db.fetch_all(
-            f"select mocks.config_uuid, logs.request, logs.response, logs.created_at from mocks "
+            f"select mocks.config_uuid, logs.request, logs.response, logs.response_status, logs.created_at from mocks "
             f"join logs on mocks.id=logs.mock_id "
             f"{clause}",
             values=query_params,
@@ -133,19 +139,25 @@ class LogRepo(_Repo):
                 config_uuid=item.config_uuid,
                 request=json.loads(item.request),
                 response=json.loads(item.response),
+                response_status=item.response_status,
                 created_at=item.created_at,
             )
             for item in result
         ]
 
     async def store_log(
-        self, mock_id: int, request_data: dict, response_data: dict
+        self,
+        mock_id: int,
+        request_data: dict,
+        response_data: dict,
+        response_status: int,
     ) -> None:
         await self.db.execute(
-            "insert into logs (mock_id, request, response) values (:mock_id, :request, :response)",
+            "insert into logs (mock_id, request, response, response_status) values (:mock_id, :request, :response, :response_status)",
             values={
                 "mock_id": mock_id,
                 "request": json.dumps(request_data, ensure_ascii=False),
                 "response": json.dumps(response_data, ensure_ascii=False),
+                "response_status": response_status,
             },
         )

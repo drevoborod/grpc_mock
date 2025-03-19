@@ -46,7 +46,8 @@ body: {
             "package": "library",
             "service": "Books",
             "method": "BookAddEndpoint",
-            "response": {}
+            "response": {},
+            "response_status": 0
         },
         {
             "package": "library",

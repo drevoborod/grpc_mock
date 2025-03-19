@@ -48,6 +48,7 @@ class MockService:
                 request_schema=json.dumps(method.request),
                 response_schema=json.dumps(method.response),
                 response_mock=json.dumps(mock.response, ensure_ascii=False),
+                response_status=mock.response_status,
             )
 
     async def _disable_old_mocks(
@@ -94,7 +95,7 @@ class GRPCService:
 
     async def process_grpc(
         self, package: str, service: str, method: str, payload: bytes
-    ) -> bytes:
+    ) -> (bytes, int):
         storage_mock = (
             await self.mock_repo.get_mocks_from_storage(
                 package=package,
@@ -106,13 +107,19 @@ class GRPCService:
             payload[5:], storage_mock.request_schema
         )
         await self.log_repo.store_log(
-            storage_mock.id, request_data, storage_mock.response_mock
+            mock_id=storage_mock.id,
+            request_data=request_data,
+            response_data=storage_mock.response_mock,
+            response_status=storage_mock.response_status,
         )
         response_data = blackboxprotobuf.encode_message(
             storage_mock.response_mock, storage_mock.response_schema
         )
         return (
-            (0).to_bytes()
-            + len(response_data).to_bytes(4, "big", signed=False)
-            + response_data
+            (
+                (0).to_bytes()
+                + len(response_data).to_bytes(4, "big", signed=False)
+                + response_data
+            ),
+            storage_mock.response_status,
         )
