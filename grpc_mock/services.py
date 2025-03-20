@@ -95,7 +95,7 @@ class GRPCService:
 
     async def process_grpc(
         self, package: str, service: str, method: str, payload: bytes
-    ) -> (bytes, int):
+    ) -> tuple[bytes, int]:
         storage_mock = (
             await self.mock_repo.get_mocks_from_storage(
                 package=package,
