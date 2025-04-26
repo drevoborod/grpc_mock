@@ -1,12 +1,17 @@
+import asyncio
 import logging
+import sys
 
+import aiosqlite
 from databases import Database
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from grpc_mock.config import create_config
-from grpc_mock.repo import MockRepo, LogRepo
+from grpc_mock.config import create_config, DbType
+from grpc_mock.prepare_sqlite_db import create_tables_sqlite
+from grpc_mock.repo_postgres import MockRepoPostgres, LogRepoPostgres
+from grpc_mock.repo_sqlite import MockRepoSqlite, LogRepoSqlite
 from grpc_mock.services import MockService, GRPCService
 from grpc_mock.views import (
     process_grpc_request,
@@ -54,10 +59,20 @@ async def lifespan(scope, receive, send) -> None:
     message = await receive()
     if message["type"] == "lifespan.startup":
         config = create_config()
-        db = Database(config.db_url)
-        await db.connect()
-        mock_repo = MockRepo(db)
-        log_repo = LogRepo(db)
+        if config.db_type == DbType.POSTGRES:
+            db = Database(config.db_url)
+            await db.connect()
+            mock_repo = MockRepoPostgres(db)
+            log_repo = LogRepoPostgres(db)
+        elif config.db_type == DbType.SQLITE:
+            db = await aiosqlite.connect(config.sqlite_db_file_name)
+            db.row_factory = aiosqlite.Row
+            await create_tables_sqlite(db)
+            mock_repo = MockRepoSqlite(db)
+            log_repo = LogRepoSqlite(db)
+        else:
+            logger.critical(f"Unsupported database type: {config.db_type}")
+            raise ValueError("Unknown database type")
         mock_service = MockService(mock_repo)
         grpc_service = GRPCService(mock_repo=mock_repo, log_repo=log_repo)
         scope["state"].update(
@@ -93,4 +108,8 @@ async def app(scope, receive, send):
             f"Something went wrong: {err}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+        if isinstance(db := scope["state"]["db"], aiosqlite.Connection):
+            await db.close()
+            loop = asyncio.get_event_loop()
+            loop.call_soon(sys.exit, 1)
     await response(scope, receive, send)

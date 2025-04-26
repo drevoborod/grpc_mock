@@ -1,7 +1,13 @@
+from enum import StrEnum
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
+
+
+class DbType(StrEnum):
+    POSTGRES = "postgres"
+    SQLITE = "sqlite"
 
 
 @dataclass
@@ -9,6 +15,8 @@ class Config:
     db_url: str
     api_host: str
     api_port: str
+    db_type: DbType
+    sqlite_db_file_name: str = field(default="")
 
 
 def create_config():
@@ -17,4 +25,6 @@ def create_config():
         db_url=os.environ["GRPC_MOCK_DATABASE_URL"],
         api_host=os.environ["GRPC_MOCK_HOST"],
         api_port=os.environ["GRPC_MOCK_PORT"],
+        db_type=DbType(os.environ["GRPC_MOCK_DB_TYPE"].lower()),
+        sqlite_db_file_name=os.environ.get("GRPC_MOCK_SQLITE_DB_FILE_NAME") or "grpc_mock.sqlite",
     )

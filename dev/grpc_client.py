@@ -27,7 +27,7 @@ async def main():
             user=BookAddRequestUser(
                 last_name="Васечкин",
                 first_name="Петя",
-                sex=BookAddRequestUserSex.FEMALE,
+                sex=BookAddRequestUserSex(BookAddRequestUserSex.FEMALE),
             )
         )
     )
