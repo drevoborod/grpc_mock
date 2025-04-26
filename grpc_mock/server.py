@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import signal
 import sys
 
 import aiosqlite
@@ -9,7 +10,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from grpc_mock.config import create_config, DbType
-from grpc_mock.prepare_sqlite_db import create_tables_sqlite
+from grpc_mock.prepare_sqlite_db import create_tables_sqlite, shutdown_sqlite
 from grpc_mock.repo_postgres import MockRepoPostgres, LogRepoPostgres
 from grpc_mock.repo_sqlite import MockRepoSqlite, LogRepoSqlite
 from grpc_mock.services import MockService, GRPCService
@@ -66,6 +67,8 @@ async def lifespan(scope, receive, send) -> None:
             log_repo = LogRepoPostgres(db)
         elif config.db_type == DbType.SQLITE:
             db = await aiosqlite.connect(config.sqlite_db_file_name)
+            loop = asyncio.get_event_loop()
+            loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(shutdown_sqlite(db)))
             db.row_factory = aiosqlite.Row
             await create_tables_sqlite(db)
             mock_repo = MockRepoSqlite(db)
@@ -108,8 +111,4 @@ async def app(scope, receive, send):
             f"Something went wrong: {err}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-        if isinstance(db := scope["state"]["db"], aiosqlite.Connection):
-            await db.close()
-            loop = asyncio.get_event_loop()
-            loop.call_soon(sys.exit, 1)
     await response(scope, receive, send)

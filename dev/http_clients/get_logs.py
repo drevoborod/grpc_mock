@@ -1,3 +1,5 @@
+import json
+
 import httpx
 from httpx import URL
 
@@ -7,4 +9,4 @@ res = httpx.get(url=url, params={"config_uuid": "UUID", "method": "BookAddEndpoi
 
 print(res.status_code)
 # print(res.content)
-print(res.json())
+print(json.dumps(res.json(), indent=4))

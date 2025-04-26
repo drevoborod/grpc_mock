@@ -1,5 +1,3 @@
-import asyncio
-
 from aiosqlite import Connection
 
 MOCKS_TABLE = \
@@ -39,3 +37,7 @@ async def create_tables_sqlite(db: Connection):
     await cursor.close()
     cursor = await db.execute(LOGS_TABLE)
     await cursor.close()
+
+
+async def shutdown_sqlite(db: Connection):
+    await db.close()
