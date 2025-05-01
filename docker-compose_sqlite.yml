@@ -1,0 +1,9 @@
+services:
+  api:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "${GRPC_MOCK_PORT}:${GRPC_MOCK_PORT}"
+    command:
+      - "${GRPC_MOCK_HOST}:${GRPC_MOCK_PORT}"

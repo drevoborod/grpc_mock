@@ -2,32 +2,37 @@
 export
 
 
-build:
-	@docker-compose build
-
 test:
 	@pytest
 
 format:
 	@ruff format .
 
-db.run:
-	@docker compose up -d db
+postgres-up:
+	@docker compose -f docker-compose_postgres.yml up -d db
 
-db.migrate:
+postgres-migrate:
 	@yoyo apply -d $(GRPC_MOCK_DATABASE_URL)
 
-db.clean:
-	@docker compose down -t 1
+postgres-down:
+	@docker compose -f docker-compose_postgres.yml down -t 1
+
+sqlite-down:
+	@docker compose -f docker-compose_sqlite.yml down
 
 dev.run:
 	@python -m grpc_mock
 
-local.run: db.run db.migrate
-	@docker compose up -d api
-
-local.stop:
-	@docker compose down
-
 run:
 	@hypercorn grpc_mock.server:app -b $(GRPC_MOCK_HOST):$(GRPC_MOCK_PORT)
+
+run-postgres: postgres-up
+	@sleep 3
+	-@$(MAKE) postgres-migrate
+	-@docker compose -f docker-compose_postgres.yml up --build api
+	-@$(MAKE) postgres-down
+
+run-sqlite:
+	-@docker compose -f docker-compose_sqlite.yml up --build
+	-@$(MAKE) sqlite-down
+
