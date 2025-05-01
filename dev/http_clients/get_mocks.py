@@ -1,5 +1,4 @@
 import json
-from xml.etree.ElementTree import indent
 
 import httpx
 from httpx import URL

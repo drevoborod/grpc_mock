@@ -1,12 +1,15 @@
 services:
   db:
     image: postgres
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${GRPC_MOCK_DATABASE_USER}
       POSTGRES_PASSWORD: ${GRPC_MOCK_DATABASE_PASSWORD}
       POSTGRES_DB: ${GRPC_MOCK_DATABASE_NAME}
     ports:
       - "${GRPC_MOCK_DATABASE_PORT}:5432"
+
   api:
     build: .
     env_file:
@@ -17,3 +20,5 @@ services:
       - db
     ports:
       - "${GRPC_MOCK_PORT}:${GRPC_MOCK_PORT}"
+    command:
+      - "${GRPC_MOCK_HOST}:${GRPC_MOCK_PORT}"

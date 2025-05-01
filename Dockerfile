@@ -12,9 +12,10 @@ COPY uv.lock /app/
 RUN uv export > deps.txt && pip install -r deps.txt
 
 COPY grpc_mock /app/grpc_mock
-COPY Makefile /app/
 
 ENV PYTHONUNBUFFERED=1
+ENV GRPC_MOCK_HOST=0.0.0.0
+ENV GRPC_MOCK_PORT=3333
 
-ENTRYPOINT []
-CMD ["make", "run"]
+ENTRYPOINT ["hypercorn", "grpc_mock.server:app", "-b"]
+CMD ["$(GRPC_MOCK_HOST):$(GRPC_MOCK_PORT)"]
