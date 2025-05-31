@@ -14,14 +14,6 @@ class MockRepo(Protocol):
     ) -> list[MockFromStorage]:
         ...
 
-    async def get_enabled_mock_ids(
-        self,
-        package_name: str,
-        service_name: str,
-        method_name: str,
-    ) -> list[int]:
-        ...
-
     async def update_mock(
         self, mock_ids: list[int], updated_at: datetime, is_deleted: bool = True
     ) -> None:
@@ -33,6 +25,7 @@ class MockRepo(Protocol):
         package_name: str,
         service_name: str,
         method_name: str,
+        mock_filter: str,
         request_schema: str,
         response_schema: str,
         response_mock: str,

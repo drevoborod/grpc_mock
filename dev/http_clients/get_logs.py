@@ -9,4 +9,4 @@ res = httpx.get(url=url, params={"config_uuid": "UUID", "method": "BookAddEndpoi
 
 print(res.status_code)
 # print(res.content)
-print(json.dumps(res.json(), indent=4))
+print(json.dumps(res.json(), indent=4, ensure_ascii=False))

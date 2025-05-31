@@ -79,6 +79,14 @@ payload = {
         {
             "package": "library",
             "service": "Books",
+            "method": "BookAddEndpoint",
+            "response": {"transaction_uuid": "7499", "user_id": 125},
+            "response_status": 0,
+            "filter": {"$.user.last_name": "John.*"}
+        },
+        {
+            "package": "library",
+            "service": "Books",
             "method": "BookRemoveEndpoint",
             "response": {"transaction_uuid": "333", "user_id": 222}
         }

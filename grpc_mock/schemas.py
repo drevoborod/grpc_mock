@@ -15,6 +15,7 @@ class MockFromSetRequest(_BaseModel):
     service: str
     method: str
     response: dict
+    filter: dict[str, str] | None = None
     response_status: int | None = 0
 
 
@@ -22,6 +23,7 @@ class MockFromGetRequest(_BaseModel):
     package: str
     service: str
     method: str
+    filter: dict[str, str] | None = None
 
 
 class UploadMocksRequest(_BaseModel):

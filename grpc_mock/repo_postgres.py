@@ -17,7 +17,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
         self, package: str, service: str, method: str
     ) -> list[MockFromStorage]:
         db_data = await self.db.fetch_all(
-            "select id, request_schema, response_schema, response_mock, response_status "
+            "select id, request_schema, response_schema, response_mock, response_status, filter "
             "from mocks where package_name=:package_name and service_name=:service_name "
             "and method_name=:method_name and is_deleted is false",
             values=dict(
@@ -36,27 +36,11 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
                 request_schema=json.loads(x.request_schema),
                 response_schema=json.loads(x.response_schema),
                 response_mock=json.loads(x.response_mock),
+                filter=json.loads(x.filter),
                 response_status=x.response_status,
             )
             for x in db_data
         ]
-
-    async def get_enabled_mock_ids(
-        self,
-        package_name: str,
-        service_name: str,
-        method_name: str,
-    ) -> list[int]:
-        result = await self.db.fetch_all(
-            "select id from mocks where package_name=:package_name "
-            "and service_name=:service_name and method_name=:method_name and is_deleted is false",
-            values={
-                "package_name": package_name,
-                "service_name": service_name,
-                "method_name": method_name,
-            },
-        )
-        return [x.id for x in result]
 
     async def update_mock(
         self, mock_ids: list[int], updated_at: datetime, is_deleted: bool = True
@@ -79,6 +63,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
         package_name: str,
         service_name: str,
         method_name: str,
+        mock_filter: str,
         request_schema: str,
         response_schema: str,
         response_mock: str,
@@ -86,15 +71,16 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
     ) -> None:
         await self.db.execute(
             "insert into mocks "
-            "(config_uuid, package_name, service_name, method_name, request_schema, response_schema, "
+            "(config_uuid, package_name, service_name, method_name, filter, request_schema, response_schema, "
             "response_mock, response_status, is_deleted) "
-            "values (:config_uuid, :package_name, :service_name, :method_name, :request_schema, :response_schema, "
+            "values (:config_uuid, :package_name, :service_name, :method_name, :mock_filter, :request_schema, :response_schema, "
             ":response_mock, :response_status, :is_deleted)",
             values=dict(
                 config_uuid=config_uuid,
                 package_name=package_name,
                 service_name=service_name,
                 method_name=method_name,
+                mock_filter=mock_filter,
                 request_schema=request_schema,
                 response_schema=response_schema,
                 response_mock=response_mock,
