@@ -8,6 +8,7 @@ class MockFromStorage:
     response_schema: dict
     response_mock: dict
     response_status: int
+    filter: dict[str, str] | None
 
 
 @dataclass

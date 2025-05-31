@@ -17,7 +17,7 @@ class MockRepoSqlite(_RepoSqlite, MockRepo):
         self, package: str, service: str, method: str
     ) -> list[MockFromStorage]:
         async with self.db.execute(
-            "select id, request_schema, response_schema, response_mock, response_status "
+            "select id, request_schema, response_schema, response_mock, response_status, filter "
             "from mocks where package_name=? and service_name=? "
             "and method_name=? and is_deleted is false",
             (package, service, method),
@@ -34,24 +34,11 @@ class MockRepoSqlite(_RepoSqlite, MockRepo):
                 request_schema=json.loads(x["request_schema"]),
                 response_schema=json.loads(x["response_schema"]),
                 response_mock=json.loads(x["response_mock"]),
+                filter=json.loads(x["filter"]),
                 response_status=x["response_status"],
             )
             for x in db_data
         ]
-
-    async def get_enabled_mock_ids(
-        self,
-        package_name: str,
-        service_name: str,
-        method_name: str,
-    ) -> list[int]:
-        async with self.db.execute(
-            "select id from mocks where package_name=? "
-            "and service_name=? and method_name=? and is_deleted is false",
-            (package_name, service_name, method_name),
-        ) as cursor:
-            result = await cursor.fetchall()
-        return [x["id"] for x in result]
 
     async def update_mock(
         self, mock_ids: list[int], updated_at: datetime, is_deleted: bool = True
@@ -68,6 +55,7 @@ class MockRepoSqlite(_RepoSqlite, MockRepo):
         package_name: str,
         service_name: str,
         method_name: str,
+        mock_filter: str,
         request_schema: str,
         response_schema: str,
         response_mock: str,
@@ -75,11 +63,11 @@ class MockRepoSqlite(_RepoSqlite, MockRepo):
     ) -> None:
         await self.db.execute(
             "insert into mocks "
-            "(config_uuid, package_name, service_name, method_name, request_schema, response_schema, "
+            "(config_uuid, package_name, service_name, method_name, filter, request_schema, response_schema, "
             "response_mock, response_status, is_deleted) "
-            "values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                config_uuid, package_name, service_name, method_name, request_schema, response_schema,
+                config_uuid, package_name, service_name, method_name, mock_filter, request_schema, response_schema,
                 response_mock, response_status, False,
             ),
         )

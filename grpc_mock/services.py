@@ -1,7 +1,9 @@
 import json
 from datetime import datetime, UTC
+import re
 
 import blackboxprotobuf
+from jsonpath import jsonpath
 
 from grpc_mock.models import MockFromStorage
 from grpc_mock.proto_parser import parse_proto_file, ProtoMethod
@@ -25,6 +27,8 @@ class MockService:
     ) -> None:
         """
         Parse mocks from a configuration request and save them to the storage.
+        Before new mocks are saved, old ones are disabled.
+        Old mocks are being located by package_name+service_name+method_name+filter.
         """
         root_structure = parse_proto_file(protos)
         for mock in mocks:
@@ -32,6 +36,7 @@ class MockService:
                 package_name=mock.package,
                 service_name=mock.service,
                 method_name=mock.method,
+                mock_filter=mock.filter,
             )
 
             method: ProtoMethod = (
@@ -45,6 +50,7 @@ class MockService:
                 package_name=mock.package,
                 service_name=mock.service,
                 method_name=mock.method,
+                mock_filter=json.dumps(mock.filter),
                 request_schema=json.dumps(method.request),
                 response_schema=json.dumps(method.response),
                 response_mock=json.dumps(mock.response, ensure_ascii=False),
@@ -56,16 +62,22 @@ class MockService:
         package_name: str,
         service_name: str,
         method_name: str,
+        mock_filter: dict[str, str] | None,
     ):
-        mock_ids = await self.repo.get_enabled_mock_ids(
-            package_name=package_name,
-            service_name=service_name,
-            method_name=method_name,
+        mocks = await self.get_mocks(
+            package=package_name,
+            service=service_name,
+            method=method_name,
         )
-        now = datetime.now(UTC)
+
+        if mock_filter:
+            mock_ids = [mock.id for mock in mocks if mock.filter == mock_filter]
+        else:
+            mock_ids = [mock.id for mock in mocks]
+
         await self.repo.update_mock(
             mock_ids,
-            updated_at=now,
+            updated_at=datetime.now(UTC),
             is_deleted=True,
         )
 
@@ -81,11 +93,8 @@ class MockService:
         return res
 
     async def delete_mocks(self, package, service, method) -> None:
-        ids = await self.repo.get_enabled_mock_ids(
-            package_name=package, service_name=service, method_name=method
-        )
-        now = datetime.now(UTC)
-        await self.repo.update_mock(mock_ids=ids, updated_at=now)
+        ids = [x.id for x in await self.get_mocks(package=package, service=service, method=method)]
+        await self.repo.update_mock(mock_ids=ids, updated_at=datetime.now(UTC), is_deleted=True)
 
 
 class GRPCService:
@@ -96,24 +105,33 @@ class GRPCService:
     async def process_grpc(
         self, package: str, service: str, method: str, payload: bytes
     ) -> tuple[bytes, int]:
-        storage_mock = (
+        storage_mocks = (
             await self.mock_repo.get_mocks_from_storage(
                 package=package,
                 service=service,
                 method=method,
             )
-        )[0]
-        request_data, _ = blackboxprotobuf.decode_message(
-            payload[5:], storage_mock.request_schema
         )
+
+        # Let's assume that any corresponding DB record does contain suitable schema:
+        request_data, _ = blackboxprotobuf.decode_message(
+            payload[5:], storage_mocks[0].request_schema
+        )
+        for mock in storage_mocks:
+            if mock.filter:
+                if self._compare_request_to_filter(request_data, mock.filter):
+                    break
+        else:
+            mock = storage_mocks[0]
+
         await self.log_repo.store_log(
-            mock_id=storage_mock.id,
+            mock_id=mock.id,
             request_data=request_data,
-            response_data=storage_mock.response_mock,
-            response_status=storage_mock.response_status,
+            response_data=mock.response_mock,
+            response_status=mock.response_status,
         )
         response_data = blackboxprotobuf.encode_message(
-            storage_mock.response_mock, storage_mock.response_schema
+            mock.response_mock, mock.response_schema
         )
         return (
             (
@@ -121,5 +139,22 @@ class GRPCService:
                 + len(response_data).to_bytes(4, "big", signed=False)
                 + response_data
             ),
-            storage_mock.response_status,
+            mock.response_status,
         )
+
+    def _compare_request_to_filter(self, request: dict, mock_filter: dict) -> bool:
+        """
+        Verifies request against all values in the filter.
+
+        :param request: gRPC request data as dictionary.
+        :param mock_filter: dictionary which keys are json path strings and values are regular expressions.
+        """
+
+        for json_path, regexp in mock_filter.items():
+            data = jsonpath(request, json_path)
+            if not data:
+                return False
+            # jsonpath returns a list, so we need to check its first item:
+            if not re.match(regexp, str(data[0])):
+                return False
+        return True

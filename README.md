@@ -57,6 +57,10 @@ body: {
             "package": "library",
             "service": "Books",
             "method": "BookAddEndpoint",
+            "filter": {
+                "<json_path1>": "<regular_expression1>",
+                "<json_path2>": "<regular_expression2>"    
+            }
             "response": {},
             "response_status": 0
         },

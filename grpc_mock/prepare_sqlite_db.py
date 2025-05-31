@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS mocks (
     package_name TEXT NOT NULL,
     service_name TEXT NOT NULL,
     method_name TEXT NOT NULL,
+    filter JSONB,
     request_schema JSONB NOT NULL,
     response_schema JSONB NOT NULL,
     response_mock JSONB NOT NULL,
