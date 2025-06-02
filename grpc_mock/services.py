@@ -15,6 +15,10 @@ from grpc_mock.schemas import (
 )
 
 
+class MockResponsePreparationError(Exception):
+    pass
+
+
 class MockService:
     def __init__(self, repo: MockRepo):
         self.repo = repo
@@ -73,7 +77,7 @@ class MockService:
         if mock_filter:
             mock_ids = [mock.id for mock in mocks if mock.filter == mock_filter]
         else:
-            mock_ids = [mock.id for mock in mocks]
+            mock_ids = [mock.id for mock in mocks if not mock.filter]
 
         await self.repo.update_mock(
             mock_ids,
@@ -130,9 +134,15 @@ class GRPCService:
             response_data=mock.response_mock,
             response_status=mock.response_status,
         )
-        response_data = blackboxprotobuf.encode_message(
-            mock.response_mock, mock.response_schema
-        )
+        try:
+            response_data = blackboxprotobuf.encode_message(
+                mock.response_mock, mock.response_schema
+            )
+        except Exception as err:
+            raise MockResponsePreparationError(
+                f"Unable to prepare response. "
+                f"Probably provided response structure does not suit .proto file structure:\n{err}"
+            )
         return (
             (
                 (0).to_bytes()

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import signal
-import sys
+import traceback
 
 import aiosqlite
 from databases import Database
@@ -106,7 +106,7 @@ async def app(scope, receive, send):
                 response = prepare_error_response("Unsupported protocol")
 
     except Exception as err:
-        logger.error(err)
+        logger.error(traceback.format_exc())
         response = prepare_error_response(
             f"Something went wrong: {err}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
