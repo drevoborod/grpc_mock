@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+# ToDo: use https://github.com/criccomini/proto-schema-parser as .proto parser
 from blackboxprotobuf.lib.protofile import import_proto
 from blackboxprotobuf.lib.config import default as default_config
 from proto_schema_parser import Parser
