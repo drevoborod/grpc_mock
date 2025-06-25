@@ -126,7 +126,10 @@ class GRPCService:
                 if self._compare_request_to_filter(request_data, mock.filter):
                     break
         else:
-            mock = storage_mocks[0]
+            try:
+                mock = next(x for x in storage_mocks if not x.filter)
+            except StopIteration:
+                raise MockResponsePreparationError("Unable to find suitable mock for the request")
 
         await self.log_repo.store_log(
             mock_id=mock.id,
