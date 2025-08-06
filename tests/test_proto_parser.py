@@ -9,6 +9,7 @@ from tests.data.protofiles import (
     MOCK_SERVICE_PROTO_2_SERVICES,
     PROTO_TO_BE_IMPORTED,
     PROTO_WITH_IMPORT,
+    GOOGLE_TIMESTAMP_PROTO,
 )
 from tests.data.typedefs import LIBRARY_REQUEST_TYPEDEF
 
@@ -41,8 +42,8 @@ def test__parse_proto_file__package_name_with_dots__successfully():
 
 
 def test__parse_2_proto_files__same_package__successfully():
-    proto_root = parse_proto_file([PROTO_TO_BE_IMPORTED, PROTO_WITH_IMPORT])
-    assert len(proto_root.packages) == 1
+    proto_root = parse_proto_file([PROTO_TO_BE_IMPORTED, PROTO_WITH_IMPORT, GOOGLE_TIMESTAMP_PROTO])
+    assert len(proto_root.packages) == 2
     # ToDo: add verifying of the typedef structure
 
 

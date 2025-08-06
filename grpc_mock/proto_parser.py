@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 
-# ToDo: use https://github.com/criccomini/proto-schema-parser as .proto parser
-from blackboxprotobuf.lib.protofile import import_proto
-from blackboxprotobuf.lib.config import default as default_config
+
+from blackboxprotobuf.lib.protofile import PROTO_FILE_TYPE_TO_BBP
 from proto_schema_parser import Parser
 from proto_schema_parser.ast import (
     Package,
@@ -11,6 +10,9 @@ from proto_schema_parser.ast import (
     File,
     Method,
     Enum,
+    Field,
+    OneOf,
+    FieldCardinality,
 )
 
 
@@ -53,18 +55,25 @@ class ProtoFileParser:
 
         :param protos: list of .proto files contents.
         """
-        raw_typedefs = [
-            import_proto(default_config, input_string=proto) for proto in protos
-        ]
-        self._raw_typedef = {}
-        for typedef in raw_typedefs:
-            self._raw_typedef.update(typedef)
         proto_element_lists = [
             Parser().parse(proto).file_elements for proto in protos
         ]
+        self._proto_ast_dict = {}
         self._packages_dict: dict[str, dict[str, Service]] = {}
         for elem_list in proto_element_lists:
+            values_iterator = iter(elem_list)
+            package_name = next(x.name for x in values_iterator if isinstance(x, Package))
+            self._prepare_ast_dict(package_name, values_iterator)
             self._add_package_to_packages_dict(elem_list)
+
+    def _prepare_ast_dict(self, name, elem_list) -> None:
+        for item in elem_list:
+            match item:
+                case Message():
+                    self._proto_ast_dict[f"{name}.{item.name}"] = item
+                    self._prepare_ast_dict(f"{name}.{item.name}", item.elements)
+                case Enum():
+                    self._proto_ast_dict[f"{name}.{item.name}"] = item
 
     def _add_package_to_packages_dict(
         self, proto_element_list: list[ProtoElement]
@@ -117,29 +126,77 @@ class ProtoFileParser:
         return ProtoMethod(
             name=method.name,
             request=self._prepare_typedef_message(
-                self._raw_typedef[f"{package_name}.{method.input_type.type}"]
+                message_type_path=f"{package_name}.{method.input_type.type}",
             ),
-            response=self._prepare_typedef_message(
-                self._raw_typedef[f"{package_name}.{method.output_type.type}"]
-            ),
+            response = self._prepare_typedef_message(
+                message_type_path=f"{package_name}.{method.output_type.type}",
+            )
+
         )
 
-    def _prepare_typedef_message(self, data: dict) -> dict:
-        new = {}
-        for key, value in data.items():
-            new[key] = self._prepare_typedef_message_data(value)
-        return new
+    def _prepare_typedef_message(self, message_type_path: str):
+        ast_item = self._proto_ast_dict[message_type_path]
+        match ast_item:
+            case Enum():
+                return {}
+            case Message():
+                new = {}
+                self._prepare_typedef_element(new, ast_item.elements, message_type_path)
+                return new
+            case _:
+                raise ProtoParserError(f"Unexpected field type for the path {message_type_path} inside proto file")
 
-    def _prepare_typedef_message_data(self, data: dict) -> dict:
-        new = {}
-        for key, value in data.items():
-            if key == "message_type_name":
-                new["message_typedef"] = self._prepare_typedef_message(
-                    self._raw_typedef[value]
-                )
-            else:
-                new[key] = value
-        return new
+    def _prepare_typedef_element(self, elems_dict: dict, elements: list, message_type_path: str):
+        for element in elements:
+            match element:
+                case Field():
+                    el_num = str(element.number)
+                    elems_dict[el_num] = {"name": element.name}
+                    if element.cardinality == FieldCardinality.REPEATED:
+                        elems_dict[el_num]["seen_repeated"] = True
+
+                    if el_type := PROTO_FILE_TYPE_TO_BBP.get(element.type):
+                        elems_dict[el_num]["type"] = el_type
+                    # it means that the type came from another .proto file
+                    elif self._proto_ast_dict.get(element.type):
+                        elems_dict[el_num]["type"] = "message"
+                        elems_dict[el_num]["message_typedef"] = self._prepare_typedef_message(
+                            message_type_path=element.type
+                        )
+                    # in other case the type definition is hopefully accessible by full path:
+                    else:
+                        new_element = self._prepare_typedef_message(
+                            message_type_path=self._locate_field_in_ast(message_type_path, element.type)
+                        )
+                        # assume that it's actually an enum:
+                        if not new_element:
+                            elems_dict[el_num]["type"] = "uint"
+                        # otherwise it definitely should be a message:
+                        else:
+                            elems_dict[el_num]["type"] = "message"
+                            elems_dict[el_num]["message_typedef"] = new_element
+                # if it's oneof, all its elements should be added to the same dict:
+                case OneOf():
+                    self._prepare_typedef_element(elems_dict, element.elements, message_type_path)
+                # ToDo: support maps as field values like: map<string, TariffSchemaEntity> tariff_input_parameter_list = 5;
+
+    def _locate_field_in_ast(self, path: str, expected_field_name: str):
+        path_fragments = path.split(".")
+        while True:
+            path_part = ".".join(path_fragments)
+            if path_part in self._packages_dict:
+                path_part = ".".join(path_fragments + [expected_field_name])
+            message = self._proto_ast_dict.get(path_part)
+            if not message:
+                raise ProtoParserError(f"Field type not found in provided proto files: {expected_field_name}")
+            if isinstance(message, (Message, Enum)):
+                if message.name == expected_field_name:
+                    return path_part
+            for element in message.elements:
+                if isinstance(element, (Message, Enum)):
+                    if element.name == expected_field_name:
+                        return f"{path_part}.{element.name}"
+            path_fragments.pop()
 
 
 def parse_proto_file(protos: list[str]) -> ProtoRootStructure:
