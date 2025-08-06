@@ -190,7 +190,7 @@ class ProtoFileParser:
             if not message:
                 raise ProtoParserError(f"Field type not found in provided proto files: {expected_field_name}")
             if isinstance(message, (Message, Enum)):
-                if message.name == expected_field_name:
+                if message.name == expected_field_name.split(".")[-1]:
                     return path_part
             for element in message.elements:
                 if isinstance(element, (Message, Enum)):
