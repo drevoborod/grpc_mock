@@ -50,7 +50,7 @@ The port can be changed in `.env` file by altering `GRPC_MOCK_PORT` value.
 ### Set mock service parameters including response
 #### Example
 ```
-POST /mocks
+POST /grpc_mocks
 body: {
     "mocks": [
         {
@@ -82,7 +82,7 @@ package+service+method configuration changes.
 ### Get mock service log for specific GRPC method or test run
 #### Example
 ```
-GET /logs
+GET /grpc_logs
 Query params: 
     {
         "package": "library",
@@ -95,7 +95,7 @@ Query params:
 ### Get current mocks configuration
 #### Example
 ```
-GET /mocks
+GET /grpc_mocks
 Query params: 
     {
         "package": "library",
@@ -107,7 +107,7 @@ Query params:
 ### Delete mock for specific GRPC endpoint
 #### Example
 ```
-DELETE /mocks
+DELETE /grpc_mocks
 Query params: 
     {
         "package": "library",

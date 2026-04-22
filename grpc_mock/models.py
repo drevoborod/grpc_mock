@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class MockFromStorage:
+class GrpcMockFromStorage:
     id: int
     request_schema: dict
     response_schema: dict
@@ -21,3 +21,14 @@ class LogFromStorage:
 
     def __post_init__(self):
         self.created_at = str(self.created_at)
+
+
+@dataclass
+class RestMockFromStorage:
+    id: int
+    query_params_filter: dict | None
+    body_filter: dict | None
+    headers_filter: dict | None
+    response_body: str | None
+    response_headers: dict | None
+    response_status: int

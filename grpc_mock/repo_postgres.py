@@ -3,7 +3,7 @@ from datetime import datetime
 
 from databases import Database
 
-from grpc_mock.models import LogFromStorage, MockFromStorage
+from grpc_mock.models import LogFromStorage, GrpcMockFromStorage
 from grpc_mock.repo import MockRepo, LogRepo, DatabaseError
 
 
@@ -13,9 +13,9 @@ class _RepoPostgres:
 
 
 class MockRepoPostgres(_RepoPostgres, MockRepo):
-    async def get_mocks_from_storage(
+    async def get_grpc_mocks_from_storage(
         self, package: str, service: str, method: str
-    ) -> list[MockFromStorage]:
+    ) -> list[GrpcMockFromStorage]:
         db_data = await self.db.fetch_all(
             "select id, request_schema, response_schema, response_mock, response_status, filter "
             "from mocks where package_name=:package_name and service_name=:service_name "
@@ -31,7 +31,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
                 f"Mocks not found. Search fields: package_name={package}, service_name={service}, method_name={method}"
             )
         return [
-            MockFromStorage(
+            GrpcMockFromStorage(
                 id=x.id,
                 request_schema=json.loads(x.request_schema),
                 response_schema=json.loads(x.response_schema),
@@ -42,7 +42,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
             for x in db_data
         ]
 
-    async def update_mock(
+    async def update_grpc_mock(
         self, mock_ids: list[int], updated_at: datetime, is_deleted: bool = True
     ):
         await self.db.execute_many(
@@ -57,7 +57,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
             ],
         )
 
-    async def add_mock_to_db(
+    async def add_grpc_mock_to_storage(
         self,
         config_uuid: str,
         package_name: str,
@@ -91,7 +91,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
 
 
 class LogRepoPostgres(_RepoPostgres, LogRepo):
-    async def get_route_log(
+    async def get_grpc_log(
         self,
         package: str | None,
         service: str | None,

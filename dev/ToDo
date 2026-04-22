@@ -1,0 +1,5 @@
+Possibly implement:
+- get and delete mock by config_uuid (also database model in models should support it).
+	Also return config_uuid instead of database ID in get mock responses.
+	(!Don't remove ID from the model GrpcMockFromStorage - it's required for filtering in _disable_old_grpc_mocks!)
+- add getting mocks also by config_uuid (schemas GrpcMockFromGetRequest and RestMockFromGetRequest)

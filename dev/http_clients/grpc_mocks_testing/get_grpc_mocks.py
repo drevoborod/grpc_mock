@@ -1,8 +1,10 @@
+import json
+
 import httpx
 from httpx import URL
 
 
-url = URL(scheme="http", host="127.0.0.1", port=3333, path="/mocks")
+url = URL(scheme="http", host="127.0.0.1", port=3333, path="/grpc_mocks")
 
 params = {
             "package": "library",
@@ -10,8 +12,8 @@ params = {
             "method": "BookAddEndpoint",
         }
 
-res = httpx.delete(url, params=params)
+res = httpx.get(url, params=params)
 
 print(res.status_code)
 # print(res.content)
-# print(res.json())
+print(json.dumps(res.json(), indent=4))

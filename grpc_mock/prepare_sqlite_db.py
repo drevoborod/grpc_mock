@@ -1,8 +1,10 @@
 from aiosqlite import Connection
 
-MOCKS_TABLE = \
-"""
-CREATE TABLE IF NOT EXISTS mocks (
+from grpc_mock.db_structure import TableNames
+
+GRPC_MOCKS_TABLE = \
+f"""
+CREATE TABLE IF NOT EXISTS {TableNames.GRPC_MOCKS} (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     config_uuid TEXT NOT NULL,
     package_name TEXT NOT NULL,
@@ -15,29 +17,59 @@ CREATE TABLE IF NOT EXISTS mocks (
     response_status INTEGER NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_deleted BOOLEAN
+    is_deleted BOOLEAN NOT NULL DEFAULT false
 );
 """
 
-LOGS_TABLE = \
-"""
-CREATE TABLE IF NOT EXISTS logs (
+GRPC_LOGS_TABLE = \
+f"""
+CREATE TABLE IF NOT EXISTS {TableNames.GRPC_LOGS} (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     mock_id INTEGER NOT NULL,
     request JSONB NOT NULL,
     response JSONB NOT NULL,
     response_status INTEGER NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(mock_id) REFERENCES mocks (id)
+    FOREIGN KEY(mock_id) REFERENCES {TableNames.GRPC_MOCKS} (id)
 );
 """
 
+REST_MOCKS_TABLE = \
+f"""
+CREATE TABLE IF NOT EXISTS {TableNames.REST_MOCKS} (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    config_uuid TEXT NOT NULL,
+    endpoint TEXT NOT NULL,
+    method TEXT NOT NULL,
+    query_params_filter JSONB,
+    body_filter JSONB,
+    headers_filter JSONB,
+    response_body TEXT,
+    response_headers JSONB,
+    response_status INTEGER NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT false
+);
+"""
+
+REST_LOGS_TABLE = \
+f"""
+CREATE TABLE IF NOT EXISTS {TableNames.REST_LOGS} (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    mock_id INTEGER NOT NULL,
+    request JSONB NOT NULL,
+    response JSONB NOT NULL,
+    response_status INTEGER NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(mock_id) REFERENCES {TableNames.REST_MOCKS} (id)
+);
+"""
 
 async def create_tables_sqlite(db: Connection):
-    cursor = await db.execute(MOCKS_TABLE)
-    await cursor.close()
-    cursor = await db.execute(LOGS_TABLE)
-    await cursor.close()
+    for table in (GRPC_MOCKS_TABLE, GRPC_LOGS_TABLE, REST_MOCKS_TABLE, REST_LOGS_TABLE):
+        cursor = await db.execute(table)
+        await cursor.close()
 
 
 async def shutdown_sqlite(db: Connection):
