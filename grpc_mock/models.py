@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import json
+
 
 @dataclass
 class GrpcMockFromStorage:
@@ -29,6 +31,12 @@ class RestMockFromStorage:
     query_params_filter: dict | None
     body_filter: dict | None
     headers_filter: dict | None
-    response_body: str | None
+    response_body: str | dict | None
     response_headers: dict | None
     response_status: int
+
+    def __post_init__(self):
+        try:
+            self.response_body = json.loads(self.response_body)
+        except json.decoder.JSONDecodeError:
+            pass

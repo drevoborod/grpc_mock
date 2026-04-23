@@ -2,7 +2,6 @@ import asyncio
 import logging
 import signal
 import traceback
-from collections.abc import Coroutine
 
 import aiosqlite
 from databases import Database
@@ -99,7 +98,7 @@ async def lifespan(scope, receive, send) -> None:
             logger.critical(f"Unsupported database type: {config.db_type}")
             raise ValueError("Unknown database type")
         grpc_mock_service = GrpcMockService(mock_repo)
-        http_mock_service = RestMockService(mock_repo)
+        rest_mock_service = RestMockService(mock_repo)
         grpc_service = GRPCService(mock_repo=mock_repo, log_repo=log_repo)
         rest_service = RestService(mock_repo=mock_repo, log_repo=log_repo)
         scope["state"].update(
@@ -107,7 +106,7 @@ async def lifespan(scope, receive, send) -> None:
                 grpc_service=grpc_service,
                 rest_service = rest_service,
                 grpc_mock_service=grpc_mock_service,
-                http_mock_service=http_mock_service,
+                rest_mock_service=rest_mock_service,
                 db=db,
                 log_repo=log_repo,
             )

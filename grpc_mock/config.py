@@ -1,5 +1,6 @@
 from enum import StrEnum
 import os
+from pathlib import Path
 from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
@@ -19,8 +20,8 @@ class Config:
     sqlite_db_file_name: str = field(default="")
 
 
-def create_config():
-    load_dotenv()
+def create_config(path: str | Path = None):
+    load_dotenv(dotenv_path=path)
     return Config(
         api_host=os.environ["GRPC_MOCK_HOST"],
         api_port=os.environ["GRPC_MOCK_PORT"],

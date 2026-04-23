@@ -94,7 +94,7 @@ payload = {
     "protos": [PROTO],
     "config_uuid": "UUID"
 }
-url = URL(scheme="http", host="127.0.0.1", port=3333, path="/mocks")
+url = URL(scheme="http", host="127.0.0.1", port=3333, path="/grpc_mocks")
 
 res = httpx.post(url, json=payload)
 

@@ -1,3 +1,4 @@
+import json
 import re
 from dataclasses import asdict
 
@@ -110,7 +111,7 @@ async def process_get_grpc_logs(request: Request) -> JSONResponse:
 async def process_add_rest_mocks(request: Request) -> JSONResponse:
     body = await request.json()
     request_data = RestUploadMocksRequestBody(**body)
-    mock_service: RestMockService = request.scope["state"]["http_mock_service"]
+    mock_service: RestMockService = request.scope["state"]["rest_mock_service"]
     await mock_service.store_rest_mocks(
         config_uuid=request_data.config_uuid,
         mocks=request_data.mocks,
@@ -126,7 +127,7 @@ async def process_add_rest_mocks(request: Request) -> JSONResponse:
 
 async def process_get_rest_mocks(request: Request) -> JSONResponse:
     params = RestMockFromGetRequest(**request.query_params)
-    mock_service: RestMockService = request.scope["state"]["http_mock_service"]
+    mock_service: RestMockService = request.scope["state"]["rest_mock_service"]
     response_data = await mock_service.get_rest_mocks(
         endpoint=params.endpoint, method=params.method
     )
@@ -161,7 +162,11 @@ async def process_get_rest_logs(request: Request) -> JSONResponse:
 
 async def process_undetermined_rest_request(request: Request):
     service: RestService = request.scope["state"]["rest_service"]
-    body = await request.body()
+    try:
+        body = await request.json()
+    except json.decoder.JSONDecodeError:
+        body = await request.body()
+        body = body.decode()
     try:
         result = await service.process_rest_request(
             endpoint=request.url.path,
@@ -172,7 +177,7 @@ async def process_undetermined_rest_request(request: Request):
         )
     except MockResponsePreparationError:
         return prepare_error_response(
-            f"Unknown endpoint: {request.url.path}", status_code=status.HTTP_404_NOT_FOUND)
+            f"Mock not found for endpoint: {request.url.path}", status_code=status.HTTP_404_NOT_FOUND)
     return JSONResponse(result.body, headers=result.headers)
 
 

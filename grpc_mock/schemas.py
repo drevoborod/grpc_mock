@@ -66,7 +66,7 @@ class RestDownloadLogsRequest(_BaseModel):
 
 
 class RestMockedResponse(_BaseModel):
-    headers: dict
+    headers: dict | None
     body: dict | str | None
 
 

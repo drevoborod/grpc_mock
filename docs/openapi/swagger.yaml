@@ -332,6 +332,8 @@ paths:
                         type: integer
                         description: HTTP response status code
                         example: 200
+                config_uuid:
+                  type: string
       responses:
         '200':
           description: Mock configuration set successfully

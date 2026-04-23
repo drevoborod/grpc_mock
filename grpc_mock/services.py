@@ -134,11 +134,11 @@ class RestMockService:
                 config_uuid=config_uuid,
                 endpoint=mock.endpoint,
                 method=mock.method,
-                query_params_filter=mock.query_params_filter,
-                body_filter=mock.body_filter,
-                headers_filter=mock.headers_filter,
-                response_body=mock.response_body,
-                response_headers=mock.response_headers,
+                query_params_filter=json.dumps(mock.query_params_filter, ensure_ascii=False),
+                body_filter=json.dumps(mock.body_filter, ensure_ascii=False),
+                headers_filter=json.dumps(mock.headers_filter, ensure_ascii=False),
+                response_body=json.dumps(mock.response_body, ensure_ascii=False),
+                response_headers=json.dumps(mock.response_headers, ensure_ascii=False),
                 response_status=mock.response_status,
             )
             for mock in mocks
@@ -264,24 +264,90 @@ class RestService:
         body: dict,
         query_params: dict,
     ) -> RestMockedResponse:
-        mocks: list[RestMockFromStorage] = await self.mock_repo.get_rest_mocks_from_storage(endpoint=endpoint, method=method)
+        try:
+            mocks: list[RestMockFromStorage] = await self.mock_repo.get_rest_mocks_from_storage(endpoint=endpoint, method=method)
+        except DatabaseError:
+            raise MockResponsePreparationError("Unable to find suitable mock for the request")
+
+        # Let's try to locate any mock WITH filters and also create list of mocks WITHOUT filters:
+        mocks_without_filters = []
         for mock in mocks:
-            if mock.headers_filter:
-                if not _compare_request_to_filter(headers, mock.headers_filter):
-                    continue
-            # ToDo: implement filtering if body does not contain valid JSON.
-            if mock.body_filter:
-                if not _compare_request_to_filter(body, mock.body_filter):
-                    continue
-            if mock.query_params_filter:
-                if not _compare_request_to_filter(query_params, mock.query_params_filter):
-                    continue
-            try:
-                prepared_body = json.loads(mock.response_body)
-            except Exception:   # yeah, too broad, I know, but who cares?
-                prepared_body = mock.response_body
-            return RestMockedResponse(headers=mock.response_headers, body=prepared_body)
-        raise MockResponsePreparationError("Unable to find suitable mock for the request")
+            has_filters = False
+            for request_part, mock_filter in (
+                    (headers, mock.headers_filter),
+                    (query_params, mock.query_params_filter),
+                    (body, mock.body_filter)
+            ):
+                if mock_filter:
+                    has_filters = True
+                    if not _compare_request_to_filter(request_part, mock_filter):
+                        # If a filter exists, but does not match, let's stop checking filters:
+                        break
+            # If some filters exist and all filters pass, it's our candidate,
+            # and we just can stop searching, and use "mock" later:
+            else:
+                 break
+            # If no filters found, let's add the mock to the list of mocks without filters:
+            if not has_filters:
+                mocks_without_filters.append(mock)
+
+        #### Simpler implementation of the mock selection algorithm.
+        #### Can be useful if separated rules for different filters need to be implemented.
+        # for mock in mocks:
+        #     has_filters = False
+        #     if mock.headers_filter:
+        #         has_filters = True
+        #         if not _compare_request_to_filter(headers, mock.headers_filter):
+        #             # If a filter exists, but does not match, let's move on to another mock:
+        #             continue
+        #     if mock.query_params_filter:
+        #         has_filters = True
+        #         if not _compare_request_to_filter(query_params, mock.query_params_filter):
+        #             # If a filter exists, but does not match, let's move on to another mock:
+        #             continue
+        #     if mock.body_filter:
+        #         has_filters = True
+        #         if not _compare_request_to_filter(body, mock.body_filter):
+        #             # If a filter exists, but does not match, let's move on to another mock:
+        #             continue
+        #     # If some filters exist and all filters pass, it's our candidate,
+        #     # and we just can stop searching, and use "mock" later:
+        #     if has_filters:
+        #         break
+        #     # if no filters found, let's add the mock to the list of mocks without filters:
+        #     else:
+        #         mocks_without_filter.append(mock)
+        #####
+
+        # If no mock with filters found, let's use the first one without them if one exist or give up if none found:
+        else:
+            mock = next(iter(mocks_without_filters), None)
+            if not mock:
+                raise MockResponsePreparationError("Unable to find suitable mock for the request")
+
+        # Add mock request to the log:
+        await self.log_repo.store_log(
+            MockType.rest,
+            mock_id=mock.id,
+            response_status=mock.response_status,
+            request_data={
+                "endpoint": endpoint,
+                "method": method,
+                "headers": headers,
+                "query_params": query_params,
+                "body": body,
+            },
+            response_data={
+                "headers": mock.response_headers,
+                "body": mock.response_body,
+            },
+        )
+
+        try:
+            prepared_body = json.loads(mock.response_body)
+        except Exception:   # yeah, too broad, I know, but who cares?
+            prepared_body = mock.response_body
+        return RestMockedResponse(headers=mock.response_headers, body=prepared_body)
 
 
 def _compare_request_to_filter(request: dict, mock_filter: dict) -> bool:
