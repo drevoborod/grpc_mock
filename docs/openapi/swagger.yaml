@@ -1,0 +1,532 @@
+openapi: 3.0.3
+info:
+  title: GRPC Mock Service
+  description: |
+    Dynamically configurable GRPC mocking service for isolated testing environments.
+    
+    Intended for testing microservices that communicate using GRPC protocol.
+    The service can be configured at runtime to set up expected requests and responses,
+    and stores requests made to it for later inspection and validation.
+  version: 1.0.0
+  contact:
+    name: GRPC Mock Service Support
+
+servers:
+  - url: http://localhost:3333
+    description: Default base URL
+
+paths:
+  /grpc_mocks:
+    post:
+      summary: Set mock service parameters including response
+      description: |
+        Configure GRPC mock endpoints with expected responses.
+        The config_uuid can be used to obtain corresponding logs.
+      tags:
+        - Mocks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mocks
+                - protos
+                - config_uuid
+              properties:
+                mocks:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - package
+                      - service
+                      - method
+                      - response
+                    properties:
+                      package:
+                        type: string
+                        example: library
+                      service:
+                        type: string
+                        example: Books
+                      method:
+                        type: string
+                        example: BookAddEndpoint
+                      filter:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        example:
+                          "<json_path1>": "<regular_expression1>"
+                          "<json_path2>": "<regular_expression2>"
+                      response:
+                        type: object
+                        description: Mock response payload
+                        example: {}
+                      response_status:
+                        type: integer
+                        description: GRPC response status code
+                        example: 0
+                protos:
+                  type: array
+                  items:
+                    type: string
+                  description: Proto file contents
+                  example:
+                    - "<proto file1 contents>"
+                    - "<proto file2 contents>"
+                config_uuid:
+                  type: string
+                  description: Unique identifier for the test run
+                  example: "UUID"
+            example:
+              mocks:
+                - package: library
+                  service: Books
+                  method: BookAddEndpoint
+                  filter:
+                    "<json_path1>": "<regular_expression1>"
+                    "<json_path2>": "<regular_expression2>"
+                  response: {}
+                  response_status: 0
+                - package: library
+                  service: Books
+                  method: BookRemoveEndpoint
+                  response: {}
+              protos:
+                - "<proto file1 contents>"
+                - "<proto file2 contents>"
+              config_uuid: "UUID"
+      responses:
+        '200':
+          description: Mock configuration set successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultResponse"
+              example:
+                status: OK
+                message: Mock configuration added successfully
+        '500':
+          description: Internal server error
+
+    get:
+      summary: Get current mocks configuration
+      description: Retrieve the current mock configuration for a specific GRPC method
+      tags:
+        - Mocks
+      parameters:
+        - name: package
+          in: query
+          required: true
+          schema:
+            type: string
+          description: GRPC package name
+          example: library
+        - name: service
+          in: query
+          required: true
+          schema:
+            type: string
+          description: GRPC service name
+          example: Books
+        - name: method
+          in: query
+          required: true
+          schema:
+            type: string
+          description: GRPC method name
+          example: BookAddEndpoint
+      responses:
+        '200':
+          description: Mock configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    request_schema:
+                      type: object
+                    response_schema:
+                      type: object
+                    response_mock:
+                      type: object
+                    response_status:
+                      type: integer
+                    filter:
+                      type: object
+                      nullable: true
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: Delete mock for specific GRPC endpoint
+      description: Remove mock configuration for a specific GRPC package, service and method combination
+      tags:
+        - Mocks
+      parameters:
+        - name: package
+          in: query
+          required: true
+          schema:
+            type: string
+          description: GRPC package name
+          example: library
+        - name: service
+          in: query
+          required: true
+          schema:
+            type: string
+          description: GRPC service name
+          example: Books
+        - name: method
+          in: query
+          required: true
+          schema:
+            type: string
+          description: GRPC method name
+          example: BookAddEndpoint
+      responses:
+        '200':
+          description: Mock deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultResponse"
+              example:
+                status: OK
+                message: Mock configuration deleted successfully
+        '500':
+          description: Internal server error
+
+  /grpc_logs:
+    get:
+      summary: Get mock service log for specific GRPC method or test run
+      description: Retrieve logged requests made to the mock service, optionally filtered by config_uuid
+      tags:
+        - Logs
+      parameters:
+        - name: package
+          in: query
+          required: false
+          schema:
+            type: string
+          description: GRPC package name
+          example: library
+        - name: service
+          in: query
+          required: false
+          schema:
+            type: string
+          description: GRPC service name
+          example: Books
+        - name: method
+          in: query
+          required: false
+          schema:
+            type: string
+          description: GRPC method name
+          example: BookAddEndpoint
+        - name: config_uuid
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Configuration UUID to filter logs by test run
+          example: "UUID"
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    config_uuid:
+                      type: string
+                    request:
+                      type: object
+                    response:
+                      type: object
+                    response_status:
+                      type: integer
+                    created_at:
+                      type: string
+        '500':
+          description: Internal server error
+
+  /rest_mocks:
+    post:
+      summary: Set mock service parameters including response
+      description: |
+        Set RESTful endpoints mock to respond with expected responses.
+        The config_uuid can be used later to obtain corresponding logs.
+      tags:
+        - Mocks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mocks
+                - config_uuid
+              properties:
+                mocks:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - endpoint
+                      - method
+                      - response_body
+                    properties:
+                      endpoint:
+                        type: string
+                        example: /api/v1/library
+                      method:
+                        type: string
+                        example: POST
+                      query_params_filter:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        example:
+                          "<json_path1>": "<regular_expression1>"
+                          "<json_path2>": "<regular_expression2>"
+                      body_filter:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        example:
+                          "<json_path1>": "<regular_expression1>"
+                          "<json_path2>": "<regular_expression2>"
+                      headers_filter:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        example:
+                          "<json_path1>": "<regular_expression1>"
+                          "<json_path2>": "<regular_expression2>"
+                      response_body:
+                        type: string
+                        description: Mock response payload
+                        example: "{ }"
+                      response_headers:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        example:
+                          "header_1": "some text"
+                          "header_2": "some other text"
+                      response_status:
+                        type: integer
+                        description: HTTP response status code
+                        example: 200
+                config_uuid:
+                  type: string
+      responses:
+        '200':
+          description: Mock configuration set successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultResponse"
+              example:
+                status: OK
+                message: Mock configuration added successfully
+        '500':
+          description: Internal server error
+
+    get:
+      summary: Get current mocks configuration
+      description: Retrieve the current mock configuration for a specific RESTful endpoint and method
+      tags:
+        - Mocks
+      parameters:
+        - name: endpoint
+          in: query
+          required: true
+          schema:
+            type: string
+          description: endpoint name (as provided when corresponding mock was configured)
+          example: /api/v1/library
+        - name: method
+          in: query
+          required: true
+          schema:
+            type: string
+          description: HTTP method name
+          example: POST
+      responses:
+        '200':
+          description: Mock configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    endpoint:
+                      type: string
+                      example: /api/v1/library
+                    method:
+                      type: string
+                      example: POST
+                    query_params_filter:
+                      type: object
+                      additionalProperties:
+                        type: string
+                      example:
+                        "<json_path1>": "<regular_expression1>"
+                        "<json_path2>": "<regular_expression2>"
+                      nullable: true
+                    body_filter:
+                      type: object
+                      additionalProperties:
+                        type: string
+                      example:
+                        "<json_path1>": "<regular_expression1>"
+                        "<json_path2>": "<regular_expression2>"
+                      nullable: true
+                    headers_filter:
+                      type: object
+                      additionalProperties:
+                        type: string
+                      example:
+                        "<json_path1>": "<regular_expression1>"
+                        "<json_path2>": "<regular_expression2>"
+                      nullable: true
+                    response_body:
+                      type: string
+                      description: Mock response payload
+                      example: "{ }"
+                      nullable: true
+                    response_headers:
+                      type: object
+                      additionalProperties:
+                        type: string
+                      example:
+                        "header_1": "some text"
+                        "header_2": "some other text"
+                      nullable: true
+                    response_status:
+                      type: integer
+                      description: HTTP response status code
+                      example: 200
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: Delete mock for specific RESTful endpoint
+      description: Remove mock configuration for a specific HTTP endpoint and method combination
+      tags:
+        - Mocks
+      parameters:
+        - name: endpoint
+          in: query
+          required: true
+          schema:
+            type: string
+          description: HTTP endpoint name
+          example: /api/v1/library
+        - name: method
+          in: query
+          required: true
+          schema:
+            type: string
+          description: HTTP method name
+          example: POST
+      responses:
+        '200':
+          description: Mock deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultResponse"
+              example:
+                status: OK
+                message: Mock configuration deleted successfully
+        '500':
+          description: Internal server error
+
+  /rest_logs:
+    get:
+      summary: Get mock service log for specific HTTP endpoint or test run
+      description: Retrieve logged requests made to the mock service, optionally filtered by config_uuid
+      tags:
+        - Logs
+      parameters:
+        - name: endpoint
+          in: query
+          required: false
+          schema:
+            type: string
+          description: HTTP endpoint name
+          example: /api/v1/library
+        - name: method
+          in: query
+          required: false
+          schema:
+            type: string
+          description: HTTP method name
+          example: POST
+        - name: config_uuid
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Configuration UUID to filter logs by test run
+          example: "UUID"
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    config_uuid:
+                      type: string
+                    request:
+                      type: object
+                    response:
+                      type: object
+                    response_status:
+                      type: integer
+                    created_at:
+                      type: string
+        '500':
+          description: Internal server error
+
+
+components:
+  schemas:
+    DefaultResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+
+tags:
+  - name: Mocks
+    description: Mock configuration management
+  - name: Logs
+    description: Request logging and inspection

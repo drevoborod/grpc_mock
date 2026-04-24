@@ -15,6 +15,7 @@ services:
     env_file:
       - .env
     environment:
+      GRPC_MOCK_DB_TYPE: postgres
       GRPC_MOCK_DATABASE_URL: "postgresql://${GRPC_MOCK_DATABASE_USER}:${GRPC_MOCK_DATABASE_PASSWORD}@db:5432/${GRPC_MOCK_DATABASE_NAME}"
     depends_on:
       - db

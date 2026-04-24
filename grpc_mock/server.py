@@ -13,47 +13,71 @@ from grpc_mock.config import create_config, DbType
 from grpc_mock.prepare_sqlite_db import create_tables_sqlite, shutdown_sqlite
 from grpc_mock.repo_postgres import MockRepoPostgres, LogRepoPostgres
 from grpc_mock.repo_sqlite import MockRepoSqlite, LogRepoSqlite
-from grpc_mock.services import MockService, GRPCService
+from grpc_mock.services import GrpcMockService, GRPCService, RestMockService, RestService
 from grpc_mock.views import (
     process_grpc_request,
-    process_get_log,
-    process_add_mocks,
-    process_get_mocks,
-    process_delete_mocks,
-    prepare_error_response,
+    process_get_grpc_logs,
+    process_add_grpc_mocks,
+    process_get_grpc_mocks,
+    process_delete_grpc_mocks,
+    prepare_error_response, process_undetermined_rest_request, process_add_rest_mocks, process_get_rest_mocks,
+    process_delete_rest_mocks, process_get_rest_logs,
 )
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
 
 
 async def process_rest_requests(scope, receive) -> JSONResponse:
     match scope:
         case {
-            "path": "/mocks",
+            "path": "/grpc_mocks",
             "method": "POST",
         }:
-            return await process_add_mocks(Request(scope, receive))
+            method = process_add_grpc_mocks
         case {
-            "path": "/logs",
+            "path": "/grpc_mocks",
             "method": "GET",
         }:
-            return await process_get_log(Request(scope, receive))
+            method = process_get_grpc_mocks
         case {
-            "path": "/mocks",
-            "method": "GET",
-        }:
-            return await process_get_mocks(Request(scope, receive))
-        case {
-            "path": "/mocks",
+            "path": "/grpc_mocks",
             "method": "DELETE",
         }:
-            return await process_delete_mocks(Request(scope, receive))
+            method = process_delete_grpc_mocks
+        case {
+            "path": "/grpc_logs",
+            "method": "GET",
+        }:
+            method = process_get_grpc_logs
+
+        case {
+            "path": "/rest_mocks",
+            "method": "POST",
+        }:
+            method = process_add_rest_mocks
+        case {
+            "path": "/rest_mocks",
+            "method": "GET",
+        }:
+            method = process_get_rest_mocks
+        case {
+            "path": "/rest_mocks",
+            "method": "DELETE",
+        }:
+            method = process_delete_rest_mocks
+        case {
+            "path": "/rest_logs",
+            "method": "GET",
+        }:
+            method = process_get_rest_logs
         case _:
-            return prepare_error_response(
-                "Unknown endpoint",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+            method = process_undetermined_rest_request
+
+    return await method(Request(scope, receive))
 
 
 async def lifespan(scope, receive, send) -> None:
@@ -76,12 +100,16 @@ async def lifespan(scope, receive, send) -> None:
         else:
             logger.critical(f"Unsupported database type: {config.db_type}")
             raise ValueError("Unknown database type")
-        mock_service = MockService(mock_repo)
+        grpc_mock_service = GrpcMockService(mock_repo)
+        rest_mock_service = RestMockService(mock_repo)
         grpc_service = GRPCService(mock_repo=mock_repo, log_repo=log_repo)
+        rest_service = RestService(mock_repo=mock_repo, log_repo=log_repo)
         scope["state"].update(
             dict(
                 grpc_service=grpc_service,
-                mock_service=mock_service,
+                rest_service = rest_service,
+                grpc_mock_service=grpc_mock_service,
+                rest_mock_service=rest_mock_service,
                 db=db,
                 log_repo=log_repo,
             )
