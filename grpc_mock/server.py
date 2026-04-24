@@ -25,7 +25,10 @@ from grpc_mock.views import (
 )
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
 
 
 async def process_rest_requests(scope, receive) -> JSONResponse:

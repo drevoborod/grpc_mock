@@ -3,6 +3,8 @@ services:
     build: .
     env_file:
       - .env
+    environment:
+      GRPC_MOCK_DB_TYPE: sqlite
     ports:
       - "${GRPC_MOCK_PORT}:${GRPC_MOCK_PORT}"
     command:

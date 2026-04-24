@@ -29,7 +29,7 @@ payload = {
             "method": "POST",
             "response_body": {"status": "filter found"},
             "response_headers": {"content-type": "application/octet-stream"},
-            "query_params_filter": {"$.parameter": "^*.vizli-putzli$"},
+            "query_params_filter": {"$.parameter": "^.*vizli-putzli$"},
         },
         {
             "endpoint": "/api/v1/headers_filtered",
@@ -43,7 +43,7 @@ payload = {
             "method": "GET",
             "response_body": {"status": "filter found"},
             "response_headers": {"Content-type": "application/octet-stream"},
-            "query_params_filter": {"$.parameter": "^*.vizli-putzli$"},
+            "query_params_filter": {"$.parameter": "^.*vizli-putzli$"},
             "headers_filter": {"content-type": "application/pdf"},
         },
         {
