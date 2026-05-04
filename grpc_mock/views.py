@@ -180,7 +180,7 @@ async def process_undetermined_rest_request(request: Request):
         result = await service.process_rest_request(
             endpoint=request.url.path,
             method=request.method,
-            headers=dict(request.headers),
+            headers={k.lower(): v for k, v in request.headers.items()},
             body=body,
             query_params=dict(request.query_params)
         )

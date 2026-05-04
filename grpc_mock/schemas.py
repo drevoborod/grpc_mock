@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -48,6 +50,14 @@ class RestMockFromSetRequest(_BaseModel):
     response_headers: dict | None = None
     response_status: int = 200
     is_binary: bool = False
+
+    def model_post_init(self, context: Any, /) -> None:
+        # Because headers are case-insensitive, it's possible that someone will try to locate them using another case,
+        # so let's prevent such situation by making both headers and the headers filter lowercase:
+        if self.response_headers:
+            self.response_headers = {k.lower(): v for k, v in self.response_headers.items()}
+        if self.headers_filter:
+            self.headers_filter = {k.lower(): v for k, v in self.headers_filter.items()}
 
 
 class RestUploadMocksRequestBody(_BaseModel):
