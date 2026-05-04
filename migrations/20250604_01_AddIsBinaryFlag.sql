@@ -1,0 +1,1 @@
+ALTER TABLE rest_mocks ADD COLUMN is_binary BOOLEAN DEFAULT FALSE;
