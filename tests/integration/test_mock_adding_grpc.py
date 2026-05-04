@@ -7,6 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+pytestmark = pytest.mark.skipif(
+    os.getenv("GRPC_MOCK_DB_TYPE") != "postgres",
+    reason="These tests require PostgreSQL"
+)
+
 @pytest.fixture()
 def db_connection():
     conn = psycopg2.connect(os.getenv("GRPC_MOCK_DATABASE_URL"))
