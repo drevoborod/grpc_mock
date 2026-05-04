@@ -1,21 +1,30 @@
+from dataclasses import asdict
 import json
 import re
-from dataclasses import asdict
 
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 
 from grpc_mock.repo import LogRepo
 from grpc_mock.response import GRPCResponse
 from grpc_mock.schemas import (
-    GrpcUploadMocksRequestBody,
-    GrpcDownloadLogsRequest,
     DefaultResponse,
+    GrpcDownloadLogsRequest,
+    GrpcMockFromGetRequest,
+    GrpcUploadMocksRequestBody,
     ProtoMethodStructure,
-    GrpcMockFromGetRequest, RestUploadMocksRequestBody, RestMockFromGetRequest, RestDownloadLogsRequest,
+    RestDownloadLogsRequest,
+    RestMockFromGetRequest,
+    RestUploadMocksRequestBody,
 )
-from grpc_mock.services import GRPCService, GrpcMockService, RestMockService, RestService, MockResponsePreparationError
+from grpc_mock.services import (
+    GrpcMockService,
+    GRPCService,
+    MockResponsePreparationError,
+    RestMockService,
+    RestService,
+)
 
 
 def get_proto_method_structure_from_request(
@@ -178,6 +187,13 @@ async def process_undetermined_rest_request(request: Request):
     except MockResponsePreparationError:
         return prepare_error_response(
             f"Mock not found for endpoint: {request.url.path}", status_code=status.HTTP_404_NOT_FOUND)
+    if result.is_binary and isinstance(result.body, bytes):
+        return Response(
+            content=result.body,
+            media_type=result.headers.get("content-type", "application/octet-stream") if result.headers else "application/octet-stream",
+            status_code=status.HTTP_200_OK,
+            headers=result.headers,
+        )
     return JSONResponse(result.body, headers=result.headers)
 
 

@@ -47,6 +47,7 @@ class RestMockFromSetRequest(_BaseModel):
     response_body: str | dict | None = None
     response_headers: dict | None = None
     response_status: int = 200
+    is_binary: bool = False
 
 
 class RestUploadMocksRequestBody(_BaseModel):
@@ -67,7 +68,8 @@ class RestDownloadLogsRequest(_BaseModel):
 
 class RestMockedResponse(_BaseModel):
     headers: dict | None
-    body: dict | str | None
+    body: dict | str | bytes | None
+    is_binary: bool = False
 
 
 class ProtoMethodStructure(_BaseModel):

@@ -9,20 +9,30 @@ from starlette import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from grpc_mock.config import create_config, DbType
+from grpc_mock.config import DbType, create_config
 from grpc_mock.prepare_sqlite_db import create_tables_sqlite, shutdown_sqlite
-from grpc_mock.repo_postgres import MockRepoPostgres, LogRepoPostgres
-from grpc_mock.repo_sqlite import MockRepoSqlite, LogRepoSqlite
-from grpc_mock.services import GrpcMockService, GRPCService, RestMockService, RestService
-from grpc_mock.views import (
-    process_grpc_request,
-    process_get_grpc_logs,
-    process_add_grpc_mocks,
-    process_get_grpc_mocks,
-    process_delete_grpc_mocks,
-    prepare_error_response, process_undetermined_rest_request, process_add_rest_mocks, process_get_rest_mocks,
-    process_delete_rest_mocks, process_get_rest_logs,
+from grpc_mock.repo_postgres import LogRepoPostgres, MockRepoPostgres
+from grpc_mock.repo_sqlite import LogRepoSqlite, MockRepoSqlite
+from grpc_mock.services import (
+    GrpcMockService,
+    GRPCService,
+    RestMockService,
+    RestService,
 )
+from grpc_mock.views import (
+    prepare_error_response,
+    process_add_grpc_mocks,
+    process_add_rest_mocks,
+    process_delete_grpc_mocks,
+    process_delete_rest_mocks,
+    process_get_grpc_logs,
+    process_get_grpc_mocks,
+    process_get_rest_logs,
+    process_get_rest_mocks,
+    process_grpc_request,
+    process_undetermined_rest_request,
+)
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

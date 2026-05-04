@@ -4,8 +4,12 @@ from datetime import datetime
 from aiosqlite import Connection
 
 from grpc_mock.db_structure import TableNames
-from grpc_mock.models import GrpcMockFromStorage, LogFromStorage, RestMockFromStorage
-from grpc_mock.repo import LogRepo, MockRepo, DatabaseError, MockType
+from grpc_mock.models import (
+    GrpcMockFromStorage,
+    LogFromStorage,
+    RestMockFromStorage,
+)
+from grpc_mock.repo import DatabaseError, LogRepo, MockRepo, MockType
 
 
 class _RepoSqlite:
@@ -46,7 +50,7 @@ class MockRepoSqlite(_RepoSqlite, MockRepo):
     ) -> list[RestMockFromStorage]:
         async with self.db.execute(
             "select id, query_params_filter, body_filter, headers_filter, "
-            "response_body, response_headers, response_status "
+            "response_body, response_headers, response_status, is_binary "
             f"from {TableNames.REST_MOCKS} where endpoint=? and method=? and is_deleted is false",
             (endpoint, method),
         ) as cursor:
@@ -65,6 +69,7 @@ class MockRepoSqlite(_RepoSqlite, MockRepo):
                 response_body=x["response_body"],
                 response_headers=json.loads(x["response_headers"]),
                 response_status=x["response_status"],
+                is_binary=bool(x["is_binary"]),
             )
             for x in db_data
         ]
@@ -78,7 +83,7 @@ class MockRepoSqlite(_RepoSqlite, MockRepo):
             ((is_deleted, updated_at, x) for x in mock_ids),
         )
         await self.db.commit()
-        
+
     async def add_grpc_mock_to_storage(
         self,
         config_uuid: str,
@@ -114,15 +119,16 @@ class MockRepoSqlite(_RepoSqlite, MockRepo):
         response_body: str | None,
         response_headers: str | None,
         response_status: int,
+        is_binary: bool = False,
     ) -> None:
         await self.db.execute(
             f"insert into {TableNames.REST_MOCKS} "
             "(config_uuid, endpoint, method, query_params_filter, body_filter, headers_filter, response_body, "
-            "response_headers, response_status, is_deleted) "
-            "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "response_headers, response_status, is_binary, is_deleted) "
+            "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 config_uuid, endpoint, method, query_params_filter, body_filter, headers_filter, response_body,
-                response_headers, response_status, False,
+                response_headers, response_status, is_binary, False,
             ),
         )
         await self.db.commit()
@@ -181,7 +187,7 @@ class LogRepoSqlite(_RepoSqlite, LogRepo):
             f"insert into {TableNames.GRPC_LOGS if mock_type == MockType.grpc else TableNames.REST_LOGS} "
             "(mock_id, request, response, response_status) values (?, ?, ?, ?)",
             (
-                mock_id, 
+                mock_id,
                 json.dumps(request_data, ensure_ascii=False),
                 json.dumps(response_data, ensure_ascii=False),
                 response_status,

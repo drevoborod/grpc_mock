@@ -1,18 +1,17 @@
 from dataclasses import dataclass
 
-
 from blackboxprotobuf.lib.protofile import PROTO_FILE_TYPE_TO_BBP
 from proto_schema_parser import Parser
 from proto_schema_parser.ast import (
-    Package,
-    Message,
-    Service,
-    File,
-    Method,
     Enum,
     Field,
-    OneOf,
     FieldCardinality,
+    File,
+    Message,
+    Method,
+    OneOf,
+    Package,
+    Service,
 )
 
 
@@ -178,7 +177,7 @@ class ProtoFileParser:
                 # if it's oneof, all its elements should be added to the same dict:
                 case OneOf():
                     self._prepare_typedef_element(elems_dict, element.elements, message_type_path)
-                # ToDo: support maps as field values like: map<string, TariffSchemaEntity> tariff_input_parameter_list = 5;
+                # TODO: support maps as field values like: map<string, TariffSchemaEntity> tariff_input_parameter_list = 5;
 
     def _locate_field_in_ast(self, path: str, expected_field_name: str):
         path_fragments = path.split(".")

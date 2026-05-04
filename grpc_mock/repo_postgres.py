@@ -52,7 +52,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
     ) -> list[RestMockFromStorage]:
         db_data = await self.db.fetch_all(
             f"select id, query_params_filter, body_filter, headers_filter, "
-            f"response_body, response_headers, response_status "
+            f"response_body, response_headers, response_status, is_binary "
             f"from {TableNames.REST_MOCKS} where endpoint=:endpoint and method=:method and is_deleted is false",
             values=dict(
                 endpoint=endpoint,
@@ -72,6 +72,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
                 response_body=x.response_body,
                 response_headers=json.loads(x.response_headers),
                 response_status=x.response_status,
+                is_binary=x.is_binary,
             )
             for x in db_data
         ]
@@ -135,13 +136,14 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
         response_body: str | None,
         response_headers: str | None,
         response_status: int,
+        is_binary: bool = False,
     ) -> None:
         await self.db.execute(
             f"insert into {TableNames.REST_MOCKS} "
             "(config_uuid, endpoint, method, query_params_filter, body_filter, headers_filter, response_body, "
-            "response_headers, response_status, is_deleted) "
+            "response_headers, response_status, is_binary, is_deleted) "
             "values (:config_uuid, :endpoint, :method, :query_params_filter, :body_filter, :headers_filter, "
-            ":response_body, :response_headers, :response_status, :is_deleted)",
+            ":response_body, :response_headers, :response_status, :is_binary, :is_deleted)",
             values=dict(
                 config_uuid=config_uuid,
                 endpoint=endpoint,
@@ -152,6 +154,7 @@ class MockRepoPostgres(_RepoPostgres, MockRepo):
                 response_body=response_body,
                 response_headers=response_headers,
                 response_status=response_status,
+                is_binary=is_binary,
                 is_deleted=False,
             ),
         )

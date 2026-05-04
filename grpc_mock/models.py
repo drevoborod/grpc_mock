@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-
 import json
 
 
@@ -34,9 +33,11 @@ class RestMockFromStorage:
     response_body: str | dict | None
     response_headers: dict | None
     response_status: int
+    is_binary: bool = False
 
     def __post_init__(self):
-        try:
-            self.response_body = json.loads(self.response_body)
-        except json.decoder.JSONDecodeError:
-            pass
+        if not self.is_binary:
+            try:
+                self.response_body = json.loads(self.response_body)
+            except json.decoder.JSONDecodeError:
+                pass

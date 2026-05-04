@@ -2,6 +2,7 @@ from aiosqlite import Connection
 
 from grpc_mock.db_structure import TableNames
 
+
 GRPC_MOCKS_TABLE = \
 f"""
 CREATE TABLE IF NOT EXISTS {TableNames.GRPC_MOCKS} (
@@ -47,6 +48,7 @@ CREATE TABLE IF NOT EXISTS {TableNames.REST_MOCKS} (
     response_body TEXT,
     response_headers JSONB,
     response_status INTEGER NOT NULL,
+    is_binary BOOLEAN NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted BOOLEAN NOT NULL DEFAULT false

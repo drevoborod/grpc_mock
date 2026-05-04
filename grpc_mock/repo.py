@@ -2,7 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Protocol
 
-from grpc_mock.models import LogFromStorage, GrpcMockFromStorage, RestMockFromStorage
+from grpc_mock.models import (
+    GrpcMockFromStorage,
+    LogFromStorage,
+    RestMockFromStorage,
+)
 
 
 class MockType(Enum):
@@ -50,6 +54,7 @@ class MockRepo(Protocol):
         response_body: str | None,
         response_headers: str | None,
         response_status: int,
+        is_binary: bool = False,
     ) -> None:
         ...
 
