@@ -356,7 +356,7 @@ class RestService:
                 prepared_body = json.loads(mock.response_body)
             except Exception:      # yeah, too broad, I know, but who cares?
                 prepared_body = mock.response_body
-        return RestMockedResponse(headers=mock.response_headers, body=prepared_body, is_binary=mock.is_binary)
+        return RestMockedResponse(response_status=mock.response_status, headers=mock.response_headers, body=prepared_body, is_binary=mock.is_binary)
 
 
 def _compare_request_to_filter(request: dict, mock_filter: dict) -> bool:

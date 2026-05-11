@@ -98,6 +98,7 @@ class RestDownloadLogsRequest(_BaseModel):
 
 
 class RestMockedResponse(_BaseModel):
+    response_status: int
     headers: dict | None
     body: str | bytes | dict | list | None
     is_binary: bool = False

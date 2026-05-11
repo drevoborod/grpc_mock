@@ -194,7 +194,7 @@ async def process_undetermined_rest_request(request: Request):
             status_code=status.HTTP_200_OK,
             headers=result.headers,
         )
-    return JSONResponse(result.body, headers=result.headers)
+    return JSONResponse(result.body, headers=result.headers, status_code=result.response_status)
 
 
 def prepare_error_response(
