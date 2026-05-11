@@ -191,7 +191,7 @@ async def process_undetermined_rest_request(request: Request):
         return Response(
             content=result.body,
             media_type=result.headers.get("content-type", "application/octet-stream") if result.headers else "application/octet-stream",
-            status_code=status.HTTP_200_OK,
+            status_code=result.response_status,
             headers=result.headers,
         )
     return JSONResponse(result.body, headers=result.headers, status_code=result.response_status)
