@@ -84,6 +84,12 @@ requests = [
         "headers": {"Content-type": "application/pdf"}
     },
     {
+        "url": URL(scheme=scheme, host=host, port=port, path="/api/v1/headers_filtered"),
+        "method": "GET",
+        "json": {"KROKODILA!": "BEGEMOTA!", "user": {"last_name": "John Doe"}},
+        "headers": {"Content-type": "application/eggs"}
+    },
+    {
         "url": URL(scheme=scheme, host=host, port=port, path="/api/v1/multi_filtered"),
         "method": "GET",
         "params": {"param_11": "param11", "parameter": "eggs"},

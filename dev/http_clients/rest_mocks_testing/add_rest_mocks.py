@@ -34,14 +34,21 @@ payload = {
         {
             "endpoint": "/api/v1/headers_filtered",
             "method": "GET",
-            "response_body": {"status": "filter found"},
+            "response_body": {"status": "headers filter found"},
             "response_headers": {"content-type": "application/octet-stream"},
             "headers_filter": {"content-type": "application/pdf"},
         },
         {
+            "endpoint": "/api/v1/headers_filtered",
+            "method": "GET",
+            "response_body": {"status": "headers filter found"},
+            "response_headers": {"content-type": "application/octet-stream"},
+            "headers_filter": {"content-Type": "application/eggs"},
+        },
+        {
             "endpoint": "/api/v1/multi_filtered",
             "method": "GET",
-            "response_body": {"status": "filter found"},
+            "response_body": {"status": "headers and query params filter found"},
             "response_headers": {"Content-type": "application/octet-stream"},
             "query_params_filter": {"$.parameter": "^.*vizli-putzli$"},
             "headers_filter": {"content-type": "application/pdf"},

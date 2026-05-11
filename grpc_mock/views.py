@@ -1,21 +1,30 @@
+from dataclasses import asdict
 import json
 import re
-from dataclasses import asdict
 
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 
 from grpc_mock.repo import LogRepo
 from grpc_mock.response import GRPCResponse
 from grpc_mock.schemas import (
-    GrpcUploadMocksRequestBody,
-    GrpcDownloadLogsRequest,
     DefaultResponse,
+    GrpcDownloadLogsRequest,
+    GrpcMockFromGetRequest,
+    GrpcUploadMocksRequestBody,
     ProtoMethodStructure,
-    GrpcMockFromGetRequest, RestUploadMocksRequestBody, RestMockFromGetRequest, RestDownloadLogsRequest,
+    RestDownloadLogsRequest,
+    RestMockFromGetRequest,
+    RestUploadMocksRequestBody,
 )
-from grpc_mock.services import GRPCService, GrpcMockService, RestMockService, RestService, MockResponsePreparationError
+from grpc_mock.services import (
+    GrpcMockService,
+    GRPCService,
+    MockResponsePreparationError,
+    RestMockService,
+    RestService,
+)
 
 
 def get_proto_method_structure_from_request(
@@ -170,15 +179,22 @@ async def process_undetermined_rest_request(request: Request):
     try:
         result = await service.process_rest_request(
             endpoint=request.url.path,
-            method=request.method,
-            headers=dict(request.headers),
+            method=request.method.lower(),
+            headers={k.lower(): v for k, v in request.headers.items()},
             body=body,
             query_params=dict(request.query_params)
         )
     except MockResponsePreparationError:
         return prepare_error_response(
             f"Mock not found for endpoint: {request.url.path}", status_code=status.HTTP_404_NOT_FOUND)
-    return JSONResponse(result.body, headers=result.headers)
+    if result.is_binary and isinstance(result.body, bytes):
+        return Response(
+            content=result.body,
+            media_type=result.headers.get("content-type", "application/octet-stream") if result.headers else "application/octet-stream",
+            status_code=status.HTTP_200_OK,
+            headers=result.headers,
+        )
+    return JSONResponse(result.body, headers=result.headers, status_code=result.response_status)
 
 
 def prepare_error_response(

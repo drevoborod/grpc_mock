@@ -1,15 +1,20 @@
 import asyncio
-import json
+import base64
 from datetime import datetime, UTC
+import json
 import re
 
 import blackboxprotobuf
 from jsonpath import jsonpath
 
 from grpc_mock.models import GrpcMockFromStorage, RestMockFromStorage
-from grpc_mock.proto_parser import parse_proto_file, ProtoMethod
-from grpc_mock.repo import MockRepo, LogRepo, DatabaseError, MockType
-from grpc_mock.schemas import GrpcMockFromSetRequest, RestMockFromSetRequest, RestMockedResponse
+from grpc_mock.proto_parser import ProtoMethod, parse_proto_file
+from grpc_mock.repo import DatabaseError, LogRepo, MockRepo, MockType
+from grpc_mock.schemas import (
+    GrpcMockFromSetRequest,
+    RestMockedResponse,
+    RestMockFromSetRequest,
+)
 
 
 class MockResponsePreparationError(Exception):
@@ -137,9 +142,10 @@ class RestMockService:
                 query_params_filter=json.dumps(mock.query_params_filter, ensure_ascii=False),
                 body_filter=json.dumps(mock.body_filter, ensure_ascii=False),
                 headers_filter=json.dumps(mock.headers_filter, ensure_ascii=False),
-                response_body=json.dumps(mock.response_body, ensure_ascii=False),
+                response_body=json.dumps(mock.response_body, ensure_ascii=False) if not mock.is_binary else mock.response_body,
                 response_headers=json.dumps(mock.response_headers, ensure_ascii=False),
                 response_status=mock.response_status,
+                is_binary=mock.is_binary,
             )
             for mock in mocks
         ]
@@ -343,11 +349,14 @@ class RestService:
             },
         )
 
-        try:
-            prepared_body = json.loads(mock.response_body)
-        except Exception:   # yeah, too broad, I know, but who cares?
-            prepared_body = mock.response_body
-        return RestMockedResponse(headers=mock.response_headers, body=prepared_body)
+        if mock.is_binary and mock.response_body:
+            prepared_body = base64.b64decode(mock.response_body)
+        else:
+            try:
+                prepared_body = json.loads(mock.response_body)
+            except Exception:      # yeah, too broad, I know, but who cares?
+                prepared_body = mock.response_body
+        return RestMockedResponse(response_status=mock.response_status, headers=mock.response_headers, body=prepared_body, is_binary=mock.is_binary)
 
 
 def _compare_request_to_filter(request: dict, mock_filter: dict) -> bool:

@@ -319,7 +319,7 @@ paths:
                           "<json_path2>": "<regular_expression2>"
                       response_body:
                         type: string
-                        description: Mock response payload
+                        description: Mock response payload. If binary data should be returned, must contain base64-encoded string
                         example: "{ }"
                       response_headers:
                         type: object
@@ -332,6 +332,10 @@ paths:
                         type: integer
                         description: HTTP response status code
                         example: 200
+                      is_binary:
+                        type: boolean
+                        description: Should be true if response_body expected to contain binary data
+                        example: false
                 config_uuid:
                   type: string
       responses:
