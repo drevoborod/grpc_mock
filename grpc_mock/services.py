@@ -159,25 +159,26 @@ class RestMockService:
         body_filter: dict[str, str] | None,
         headers_filter: dict[str, str] | None,
     ):
+        filter_names = ("query_params_filter", "body_filter", "headers_filter")
         params = locals()
         filters = {
             k: v for k, v in params.items()
-            if k in ("query_params_filter", "body_filter", "headers_filter") and v
+            if k in filter_names and v
         }
         mocks: list[RestMockFromStorage] = await self.get_rest_mocks(endpoint=endpoint, method=method)
         if filters:
-            filtered_mocks = filter(
+            selected_mocks = filter(
                 lambda x: all(
                     getattr(x, filter_name) == filter_value for filter_name, filter_value in filters.items()
                 ), mocks
             )
         else:
-            filtered_mocks = filter(
+            selected_mocks = filter(
                 lambda x: all(
-                    getattr(x, filter_name) is None for filter_name in filters
+                    getattr(x, filter_name) is None for filter_name in filter_names
                 ), mocks
             )
-        mock_ids = [x.id for x in filtered_mocks]
+        mock_ids = [x.id for x in selected_mocks]
         await self.repo.update_mock(
             MockType.rest,
             mock_ids,
@@ -289,13 +290,14 @@ class RestService:
                     if not _compare_request_to_filter(request_part, mock_filter):
                         # If a filter exists, but does not match, let's stop checking filters:
                         break
-            # If some filters exist and all filters pass, it's our candidate,
-            # and we just can stop searching, and use "mock" later:
             else:
-                 break
-            # If no filters found, let's add the mock to the list of mocks without filters:
-            if not has_filters:
-                mocks_without_filters.append(mock)
+                # If no filters found, we should add the mock to the list of mocks without filters:
+                if not has_filters:
+                    mocks_without_filters.append(mock)
+                else:
+                    # If some filters exist and all filters pass, it's our candidate,
+                    # and we just can stop searching, and use "mock" later:
+                    break
 
         #### Simpler implementation of the mock selection algorithm.
         #### Can be useful if separated rules for different filters need to be implemented.
